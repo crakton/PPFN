@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "228753005852",
+    "project_id": "ppfnapp",
+    "storage_bucket": "ppfnapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:228753005852:android:06abcb49ba7eb29a76eed9",
+        "android_client_info": {
+          "package_name": "com.ppfn"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "228753005852-cefvrvn989sibhf7kc6i6vqdg05b6fm1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ppfn",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "228753005852-huqb33amj59mfp4743gupquog90d48es.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDN-NzkB0AR7bNwcE-txAQwrIKw4HxadXs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "228753005852-huqb33amj59mfp4743gupquog90d48es.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
