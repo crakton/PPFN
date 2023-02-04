@@ -1,0 +1,36 @@
+export default interface IClientData {
+	readonly id: string;
+	readonly first_name: string;
+	readonly last_name: string;
+	readonly gender: string;
+	readonly date_of_birth: Date | string | number;
+	readonly phone_number: string;
+	readonly email: string;
+	readonly hash: string;
+	readonly next_of_kin: string;
+	readonly relationship_with_nok: string;
+	readonly geolocation: string;
+	readonly address: string;
+	readonly city: string;
+	readonly state: string;
+	readonly blood_group: string;
+	readonly genotype: string;
+	readonly regdate: string;
+	readonly religion: string;
+	readonly education: string;
+	readonly marital_status: string;
+	readonly image: string;
+	readonly system_user: string;
+	readonly status: string;
+	readonly last_login: string;
+	readonly height: string;
+	readonly weight: string;
+	readonly nationalID: string;
+	readonly insurar_name: string;
+	readonly photo: string;
+	readonly photo_name: string;
+	readonly photo_type: string;
+	readonly photo_error: number | string;
+	readonly photo_size: number | string;
+	readonly photo_path: string;
+}

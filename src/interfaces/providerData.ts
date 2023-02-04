@@ -1,0 +1,58 @@
+import IClientData from "./clientData";
+
+export default interface IProviderData {
+	readonly id: string;
+	readonly title: string;
+	readonly first_name: string;
+	readonly last_name: string;
+	readonly gender: string;
+	readonly phone_number: string;
+	readonly date_of_birth: Date | string | number;
+	readonly email: string;
+	readonly next_of_kin: string;
+	readonly relationship_with_nok: string;
+	readonly address: string;
+	readonly image: string;
+	readonly geo_location: string;
+	readonly last_login: string;
+	readonly nationalID: string;
+	readonly photo: string;
+	readonly photo_size: string;
+	readonly photo_name: string;
+	readonly photo_type: string;
+	readonly photo_error: string;
+	readonly photo_path: string;
+	readonly t1: string | number;
+	readonly t2: string | number;
+	readonly t3: string | number;
+	readonly t4: string | number;
+	readonly t5: string | number;
+	readonly t6: string | number;
+	readonly t7: string | number;
+	readonly t8: string | number;
+	readonly t9: string | number;
+	readonly t10: string | number;
+	readonly t11: string | number;
+	readonly t12: string | number;
+	readonly t13: string | number;
+	readonly t14: string | number;
+	readonly t15: string | number;
+	readonly t16: string | number;
+	readonly t17: string | number;
+	readonly t18: string | number;
+	readonly t19: string | number;
+	readonly t20: string | number;
+	readonly t21: string | number;
+	readonly t22: string | number;
+	readonly t23: string | number;
+	readonly city: string;
+	readonly weight: string;
+	readonly state: string;
+	readonly category: string;
+	readonly facility: string;
+	readonly experience: string;
+	readonly doctorSlot: {
+		data: [{time: string; available: boolean}];
+	};
+	readonly rating: number;
+}
