@@ -58,6 +58,17 @@ const NewUser = memo(() => {
 			fullnameRef.current?.focus();
 			return;
 		}
+		const lastname = fullname.trim().split(" ").splice(1).join("");
+
+		if (lastname === null || lastname === "") {
+			Toast.showToast({
+				message: "Fullname required!",
+				type: "danger",
+				duration: 2000,
+			});
+			fullnameRef.current?.focus();
+			return;
+		}
 		if (!address) {
 			Toast.showToast({
 				message: "Address required!",
@@ -78,9 +89,9 @@ const NewUser = memo(() => {
 		}
 		const areacode = phoneNumber.slice(0, 4);
 
-		if (areacode !== "+234") {
+		if (areacode !== "+234" || phoneNumber.length !== 14) {
 			Toast.showToast({
-				message: "Phone number should start with +234",
+				message: "Phone should start with +234 & ends with 10 digits",
 				type: "danger",
 				duration: 2000,
 			});
@@ -88,9 +99,14 @@ const NewUser = memo(() => {
 			phoneRef.current?.focus();
 			return;
 		}
-		if (!email) {
+		if (
+			!email ||
+			!email.match(
+				/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
+			)
+		) {
 			Toast.showToast({
-				message: "Email address required!",
+				message: "Valid email address required!",
 				type: "danger",
 				duration: 2000,
 			});
@@ -118,15 +134,13 @@ const NewUser = memo(() => {
 		}
 		const user = {
 			address,
-			first_name: fullname.split(" ").slice(0, 1).toString().trim(),
-			last_name: fullname.split(" ").slice(1).toString().trim(),
+			first_name: fullname.trim().split(" ").slice(0, 1).join(""),
+			last_name: fullname.trim().split(" ").slice(1).join(" "),
 			date_of_birth: formatDob(),
 			email,
 			gender,
 			phone_number: phoneNumber,
 		};
-		console.log(user);
-
 		navigate("other_form_details", user);
 	}, [address, dob, email, fullname, gender, navigate, phoneNumber]);
 
@@ -266,7 +280,23 @@ const NewUser = memo(() => {
 							</View>
 						</View>
 						<TouchableOpacity
-							style={styles.signup}
+							disabled={
+								!fullname ||
+								!address ||
+								!phoneNumber ||
+								!email ||
+								!dob
+							}
+							style={[
+								styles.signup,
+								!fullname ||
+								!address ||
+								!phoneNumber ||
+								!email ||
+								!dob
+									? {backgroundColor: "lightgray"}
+									: null,
+							]}
 							onPress={handleFormSubmission}>
 							<Text style={styles.signupText}>Proceed</Text>
 						</TouchableOpacity>
@@ -366,7 +396,7 @@ const styles = StyleSheet.create({
 		borderRadius: 50,
 		justifyContent: "center",
 		alignItems: "center",
-		backgroundColor: style.highlight + "aa",
+		backgroundColor: style.highlight + "ef",
 		shadowColor: "#8b8b8b",
 		shadowOffset: {width: 0, height: 0},
 		shadowOpacity: 0.2,

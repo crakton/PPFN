@@ -15,13 +15,6 @@ import {
 import axios from "axios";
 import FaIcon from "react-native-vector-icons/FontAwesome";
 import KommunicateChat from "react-native-kommunicate-chat";
-import {
-	isCancel,
-	DocumentPickerResponse,
-	pickSingle,
-	types,
-	isInProgress,
-} from "react-native-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {Toast} from "react-native-awesome";
 import {useDispatch} from "react-redux";
@@ -42,6 +35,8 @@ import IClientData from "../../interfaces/clientData";
 import {getClientData} from "../../redux/user/userData";
 import {Dropdown} from "../../components/Dropdown";
 import {ItemValue} from "@react-native-community/picker/typings/Picker";
+import firebaseServices from "../../services/firebase.service";
+import ActivityLoader from "../../components/ActivityLoader";
 export default function OtherFormDetails() {
 	const {
 		params,
@@ -67,41 +62,14 @@ export default function OtherFormDetails() {
 	const [password, setPassword] = React.useState<string>();
 	const [confirmPassword, setConfirmPassword] = React.useState<string>();
 	const [selectedState, setSelectedState] = React.useState<ItemValue>("");
-	const [imageUri, setImageUri] =
-		React.useState<DocumentPickerResponse | null>();
+	const [isConnecting, setIsconnecting] = React.useState(false);
+
 	const [hidePassword, setHidePassword] = React.useState<boolean>(true);
 
 	const handleStateSelection = useCallback(
 		(val: ItemValue) => setSelectedState(val),
 		[],
 	);
-	const handleImageSelection = useCallback(async () => {
-		try {
-			const image = await pickSingle({
-				type: types.images,
-				copyTo: "cachesDirectory",
-				allowMultiSelection: false,
-				mode: "import",
-			});
-
-			if (image.size > Math.pow(10, 5)) {
-				Toast.showToast({message: "Please use image lesser than 1MB"});
-			} else {
-				setImageUri(image);
-			}
-		} catch (e) {
-			if (isCancel(e)) {
-				Toast.showToast({message: "Operation cancelled"});
-				// User cancelled the picker, exit any dialogs or menus and move on
-			} else if (isInProgress(e)) {
-				console.warn(
-					"multiple pickers were opened, only the last will be considered",
-				);
-			} else {
-				throw e;
-			}
-		}
-	}, []);
 	const handleSignup = useCallback(async () => {
 		if (!password) {
 			Toast.showToast({message: "Password required!"});
@@ -124,10 +92,8 @@ export default function OtherFormDetails() {
 			passRef.current?.focus();
 			return;
 		}
-		// if (!imageUri) {
-		// 	Toast.showToast({message: "Please provide a profile image"});
-		// 	return;
-		// }
+		setIsconnecting(true);
+
 		try {
 			/**
 			 * API Actions here
@@ -139,7 +105,10 @@ export default function OtherFormDetails() {
 			});
 			if (res.data.message === "success") {
 				const signed = await AsyncStorage.getItem("is_signed");
-
+				await firebaseServices.signupEmailPassword(
+					params.email,
+					password,
+				);
 				dispatch(isSigned(signed));
 				const __ud__ = {
 					email: params.email,
@@ -148,6 +117,12 @@ export default function OtherFormDetails() {
 
 				const response_client = await loginClient(
 					JSON.stringify(__ud__),
+				);
+				await firebaseServices.addUserDoc(
+					`@${params.last_name.split(" ").join("")}${
+						response_client.data.id
+					}`,
+					{fcm_token: await firebaseServices.getFCMToken()},
 				);
 				if (
 					(response_client?.data.status !== false &&
@@ -160,15 +135,15 @@ export default function OtherFormDetails() {
 						["is_provider", "no"],
 						["user_data", JSON.stringify(response_client?.data)],
 					]);
-
-					const user_data: IClientData = JSON.parse(
-						await AsyncStorage.getItem("user_data"),
-					);
 					Toast.showToast({
 						duration: 2000,
 						message: "Account successfully created",
 						type: "success",
 					});
+
+					const user_data: IClientData = JSON.parse(
+						await AsyncStorage.getItem("user_data"),
+					);
 
 					dispatch(getClientData(user_data));
 					KommunicateChat.loginUser(
@@ -192,6 +167,7 @@ export default function OtherFormDetails() {
 				}
 			}
 		} catch (error: any) {
+			setIsconnecting(false);
 			if (error.message === "Network Error") {
 				Toast.showToast({
 					message: "There is a problem with your network connection!",
@@ -200,20 +176,19 @@ export default function OtherFormDetails() {
 			} else if (error.response) {
 				// Request made but the server responded with an error
 				Toast.showToast({message: "Something went wrong!"});
-				throw new Error(JSON.stringify(error));
+				console.log(error);
 			} else if (error.request) {
 				// Request made but no response is received from the server.
 				Toast.showToast({message: "Sorry, the problem is from us."});
-				throw new Error(JSON.stringify(error));
+				console.log(error);
 			} else {
 				// Error occured while setting up the request
 				Toast.showToast({message: "An error occured!"});
-				throw new Error(JSON.stringify(error));
+				console.log(error);
 			}
 		}
 	}, [
 		confirmPassword,
-		imageUri,
 		params.address,
 		params.date_of_birth,
 		params.email,
@@ -236,35 +211,6 @@ export default function OtherFormDetails() {
 				</Text>
 				<KeyboardAvoidingView behavior="height">
 					<View style={styles.bioContainer}>
-						<View style={styles.imageContainer}>
-							{imageUri ? (
-								<Image
-									style={styles.image}
-									source={{uri: imageUri.uri}}
-								/>
-							) : (
-								<TouchableOpacity
-									onPress={handleImageSelection}
-									style={styles.image}>
-									<Text>Upload photo!</Text>
-									<FaIcon
-										name="user"
-										size={50}
-										color={style.tertiaryColor}
-									/>
-								</TouchableOpacity>
-							)}
-							<TouchableOpacity
-								onPress={handleImageSelection}
-								style={styles.imageUploadBtn}>
-								<FaIcon
-									name="camera"
-									size={30}
-									color={style.tertiaryColor}
-								/>
-							</TouchableOpacity>
-						</View>
-
 						<View style={styles.passwordGroup}>
 							<TextInput
 								ref={passRef}
@@ -330,6 +276,13 @@ export default function OtherFormDetails() {
 								title={"State of Origin"}
 							/>
 						</View>
+
+						{isConnecting ? (
+							<View style={{marginTop: 50}}>
+								<ActivityLoader />
+							</View>
+						) : null}
+
 						<TouchableOpacity
 							onPress={handleSignup}
 							style={styles.signup}>
@@ -355,28 +308,6 @@ const styles = StyleSheet.create({
 		height: 80,
 		resizeMode: "cover",
 		padding: 15,
-	},
-	imageContainer: {
-		flex: 1,
-		flexDirection: "column",
-		justifyContent: "center",
-		alignItems: "center",
-		position: "relative",
-	},
-	image: {
-		width: 120,
-		height: 120,
-		resizeMode: "contain",
-		borderRadius: 100,
-		backgroundColor: style.cardColor,
-		padding: 10,
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	imageUploadBtn: {
-		flex: 1,
-		padding: 10,
-		// ...StyleSheet.absoluteFill,
 	},
 	scrollContainer: {
 		flex: 1,

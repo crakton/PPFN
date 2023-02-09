@@ -28,6 +28,8 @@ import {isSigned} from "../../redux/auth/isSigned";
 import {getClientData, getProviderData} from "../../redux/user/userData";
 import {Toast} from "react-native-awesome";
 import ActivityLoader from "../../components/ActivityLoader";
+import firebaseServices from "../../services/firebase.service";
+import emailVerification from "../../apis/email-verification";
 
 const Login = memo(() => {
 	const {
@@ -64,6 +66,7 @@ const Login = memo(() => {
 		}
 		const __ud__ = {email: username, hash: password};
 		setIsconnecting(true);
+
 		try {
 			const response_client = await loginClient(JSON.stringify(__ud__));
 
@@ -72,43 +75,59 @@ const Login = memo(() => {
 					response_client?.data.status === null) ||
 				response_client?.data.status === "Active"
 			) {
-				await AsyncStorage.multiSet([
-					["is_signed", "yes"],
-					["is_client", "yes"],
-					["is_provider", "no"],
-					["user_data", JSON.stringify(response_client?.data)],
-				]);
-
-				const signed = await AsyncStorage.getItem("is_signed");
-
-				const user_data: IClientData = JSON.parse(
-					await AsyncStorage.getItem("user_data"),
+				const fireresponse = await firebaseServices.signinEmailPassword(
+					username,
+					password,
 				);
 
-				KommunicateChat.loginUser(
-					{
-						userId: user_data.id,
-						applicationId: kommunicate_appid,
-						deviceApnsType: 0,
-						displayName: `${user_data.first_name} ${user_data.last_name}`,
-					},
-					(res: string) => {
-						if (res === "Success") {
-							console.log("Kchat user logged in successfully");
-						} else {
-							console.log("An error occured");
-						}
-					},
-				);
+				if (fireresponse.code !== "auth/user-not-found") {
+					await AsyncStorage.multiSet([
+						["is_signed", "yes"],
+						["is_client", "yes"],
+						["is_provider", "no"],
+						["user_data", JSON.stringify(response_client?.data)],
+					]);
 
-				setTimeout(() => {
-					dispatch(getClientData(user_data));
-					dispatch(isSigned(signed));
-					reset({index: 0, routes: [{name: "drawer"}]});
-				}, 1000);
-				Toast.showToast({message: "Login successful", type: "success"});
+					const signed = await AsyncStorage.getItem("is_signed");
 
-				return;
+					const user_data: IClientData = JSON.parse(
+						await AsyncStorage.getItem("user_data"),
+					);
+
+					await firebaseServices.updateUserDoc(
+						`@${user_data.last_name}${user_data.id}`,
+						{fcm_token: await firebaseServices.getFCMToken()},
+					);
+
+					KommunicateChat.loginUser(
+						{
+							userId: user_data.id,
+							applicationId: kommunicate_appid,
+							deviceApnsType: 0,
+							displayName: `${user_data.first_name} ${user_data.last_name}`,
+						},
+						(res: string) => {
+							if (res === "Success") {
+								console.log(
+									"Kchat user logged in successfully",
+								);
+							} else {
+								console.log("An error occured");
+							}
+						},
+					);
+					Toast.showToast({
+						message: "Login successful",
+						type: "success",
+					});
+
+					setTimeout(() => {
+						dispatch(getClientData(user_data));
+						dispatch(isSigned(signed));
+						reset({index: 0, routes: [{name: "drawer"}]});
+					}, 1000);
+					return;
+				}
 			} else if (response_client.data.status === "false") {
 				setIsconnecting(false);
 				setPassword("");
@@ -148,6 +167,19 @@ const Login = memo(() => {
 			Toast.showToast({message: "An error occured!"});
 			console.warn(error);
 		}
+
+		const verifyProvider = await emailVerification(username);
+
+		if (verifyProvider?.status !== 200) {
+			Toast.showToast({
+				message:
+					"Account does not exist. If you are a provider please contact Admin.",
+				type: "danger",
+				duration: 3000,
+			});
+			setIsconnecting(false);
+			return;
+		}
 		try {
 			const response_provider = await loginProvider(
 				JSON.stringify(__ud__),
@@ -157,26 +189,54 @@ const Login = memo(() => {
 					response_provider?.data.status === null) ||
 				response_provider?.data.status === "Active"
 			) {
-				await AsyncStorage.multiSet([
-					["is_signed", "yes"],
-					["is_provider", "yes"],
-					["is_client", "no"],
-					["provider_data", JSON.stringify(response_provider?.data)],
-				]);
-				const signed = await AsyncStorage.getItem("is_signed");
-				const provider_data: IProviderData = JSON.parse(
-					await AsyncStorage.getItem("provider_data"),
+				const fireresponse = await firebaseServices.signinEmailPassword(
+					username,
+					password,
 				);
-				setTimeout(() => {
-					dispatch(getProviderData(provider_data));
-					dispatch(isSigned(signed));
-					reset({
-						index: 0,
-						routes: [{name: "drawer"}],
-					});
-				}, 1000);
-				Toast.showToast({message: "Login successful", type: "success"});
 
+				if (
+					fireresponse.code === "auth/user-not-found" ||
+					fireresponse.user.email === username
+				) {
+					firebaseServices
+						.signupEmailPassword(username, password)
+						.then(async () => {
+							await AsyncStorage.multiSet([
+								["is_signed", "yes"],
+								["is_provider", "yes"],
+								["is_client", "no"],
+								[
+									"provider_data",
+									JSON.stringify(response_provider?.data),
+								],
+							]);
+							const signed = await AsyncStorage.getItem(
+								"is_signed",
+							);
+							const provider_data: IProviderData = JSON.parse(
+								await AsyncStorage.getItem("provider_data"),
+							);
+							await firebaseServices.addUserDoc(
+								`@${provider_data.last_name}${provider_data.id}`,
+								{
+									fcm_token:
+										await firebaseServices.getFCMToken(),
+								},
+							);
+							setTimeout(() => {
+								dispatch(getProviderData(provider_data));
+								dispatch(isSigned(signed));
+								reset({
+									index: 0,
+									routes: [{name: "drawer"}],
+								});
+							}, 1000);
+							Toast.showToast({
+								message: "Login successful",
+								type: "success",
+							});
+						});
+				}
 				return;
 			} else if (response_provider.data.status === "false") {
 				setIsconnecting(false);
