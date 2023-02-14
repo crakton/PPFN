@@ -17,6 +17,9 @@ export default function ReportDocListItem(props: any) {
 	const {provider_data} = useSelector((state: RootState) => state.userData);
 	const dispatch = useDispatch();
 	const {navigate} = useNavigation<{navigate: INavigateProps}>();
+
+	const handleDownload = useCallback((id: number) => {}, []);
+	const handlePreview = useCallback((id: number) => {}, []);
 	const handleDeleteReport = useCallback(
 		(id: number) => {
 			Alert.alert(
@@ -30,10 +33,12 @@ export default function ReportDocListItem(props: any) {
 								const response = await axios({
 									url: `https://ppfnhealthapp.com/api/report/${id}`,
 									method: "POST",
-									data: `_method=delete&provider_id=${provider_data.id}`,
+									data: `provider_id=${provider_data.id}&_methhod=delete`,
+									headers: {
+										"Content-Type": "multipart/form-data",
+									},
 								});
 								if (response.status === 200) {
-									console.log("stats", response.data);
 									axios
 										.get(
 											`https://ppfnhealthapp.com/api/report`,
@@ -53,7 +58,6 @@ export default function ReportDocListItem(props: any) {
 											});
 											dispatch(updateReport(res.data));
 											navigate("reports");
-											console.log("new ", res.data);
 										})
 										.catch(error => console.log(error));
 								}
@@ -62,6 +66,7 @@ export default function ReportDocListItem(props: any) {
 									Toast.showToast({message: "Network Error"});
 									console.log(error);
 								}
+								console.log(JSON.stringify(error));
 							}
 						},
 					},
@@ -113,23 +118,43 @@ export default function ReportDocListItem(props: any) {
 				</View>
 			</View>
 			<View style={{flexDirection: "column"}}>
-				<TouchableOpacity style={styles.secondaryBtn}>
-					<AntIcon color={style.highlight} size={30} name="eye" />
-				</TouchableOpacity>
-				<TouchableOpacity
-					style={styles.primaryBtn}
-					onPress={() => handleDeleteReport(props.id)}>
-					{props.clinic && (
-						<AntIcon
-							color={style.highlight}
-							size={30}
-							name="download"
-						/>
-					)}
-					{props.status && (
-						<FaIcon color={"#f00"} size={30} name="times" />
-					)}
-				</TouchableOpacity>
+				{props.download ? (
+					<>
+						<TouchableOpacity
+							onPress={() => handlePreview(props.id)}
+							style={styles.secondaryBtn}>
+							<AntIcon
+								color={style.highlight}
+								size={30}
+								name="eye"
+							/>
+						</TouchableOpacity>
+						<TouchableOpacity
+							style={styles.primaryBtn}
+							onPress={() => handleDownload(props.id)}>
+							<AntIcon
+								color={style.highlight}
+								size={30}
+								name="download"
+							/>
+						</TouchableOpacity>
+					</>
+				) : (
+					<TouchableOpacity
+						style={styles.primaryBtn}
+						onPress={() => handleDeleteReport(props.id)}>
+						{props.clinic && (
+							<AntIcon
+								color={style.highlight}
+								size={30}
+								name="download"
+							/>
+						)}
+						{props.status && (
+							<FaIcon color={"#f00"} size={30} name="times" />
+						)}
+					</TouchableOpacity>
+				)}
 			</View>
 		</View>
 	);

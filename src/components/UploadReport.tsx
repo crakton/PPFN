@@ -1,5 +1,6 @@
 import {Picker} from "@react-native-community/picker";
 import {ItemValue} from "@react-native-community/picker/typings/Picker";
+import {useNavigation} from "@react-navigation/native";
 import axios from "axios";
 import React, {memo, useCallback, useEffect, useState} from "react";
 import {
@@ -20,10 +21,14 @@ import {
 import {TouchableWithoutFeedback} from "react-native-gesture-handler";
 import AntIcon from "react-native-vector-icons/AntDesign";
 import {useSelector} from "react-redux";
+import sendFcm from "../apis/send-fcm";
 import {services} from "../constants/services";
 
 import {style} from "../constants/style";
+import {INavigateProps} from "../interfaces";
+import IClientData from "../interfaces/clientData";
 import IListAppointment from "../interfaces/listAppointment";
+import firebaseServices from "../services/firebase.service";
 import {RootState} from "../types/redux.type";
 import {WIDTH} from "../utils/dim";
 import {Dropdown} from "./Dropdown";
@@ -33,9 +38,14 @@ const UploadReport = () => {
 	const [uploadFile, setUploadFile] =
 		React.useState<DocumentPickerResponse | null>(null);
 	const [appointments, setAppointments] = useState<IListAppointment[]>([]);
-	const [selectAppointment, setSelectedAppointment] = useState<ItemValue>("");
-	const [appoinmentName, setAppointmentName] = useState<IListAppointment>();
-	const [service, setService] = useState<ItemValue>("");
+	const [appointmentID, setAppointmentID] = useState<ItemValue>("");
+	const [appointmentData, setAppointmentData] = useState<IListAppointment>();
+	const [client, setClient] = useState<IClientData>();
+	// const [service, setService] = useState<ItemValue>("");
+
+	const {navigate} = useNavigation<{navigate: INavigateProps}>();
+
+	//get providers appointments
 	useEffect(() => {
 		(async () => {
 			const appmts = await (
@@ -46,6 +56,31 @@ const UploadReport = () => {
 			setAppointments(appmts);
 		})();
 	}, []);
+
+	//get specifice appointment datum on user appointmentID select
+	useEffect(() => {
+		axios
+			.get(
+				`https://ppfnhealthapp.com/api/appointment/single?id=${appointmentID}`,
+			)
+			.then(res => {
+				setAppointmentData(res.data);
+			})
+			.catch(error => {
+				console.log(error);
+			});
+	}, [appointmentID]);
+
+	useEffect(() => {
+		axios
+			.get(
+				`https://ppfnhealthapp.com/api/beneficiary/single?id=${appointmentData?.client_id}`,
+			)
+			.then(res => setClient(res.data))
+			.catch(error => console.log(error));
+	}, [appointmentData?.client_id]);
+
+	console.log(client?.id);
 
 	const handleOnSelectUpload = useCallback(async () => {
 		try {
@@ -70,26 +105,49 @@ const UploadReport = () => {
 	}, []);
 
 	const handleReportSubmit = useCallback(async () => {
-		try {
-			const form = new FormData();
-			form.append("appointment_id", selectAppointment);
-			form.append("status", "sent");
-			form.append("provider_id", provider_data.id);
-			form.append("title", appoinmentName?.service_name);
-			const res = await axios(`https://ppfnhealthapp.com/api/report`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "multipart/formdata",
-					Accept: "application/json",
-				},
-				data: `appointment_id=${selectAppointment}&provider_id=${provider_data.id}&status=sent&title=${appoinmentName?.service_name}`,
+		if (!appointmentData) {
+			Toast.showToast({
+				message: "select beneficiary",
+				type: "warning",
+				duration: 2000,
 			});
+			return;
+		}
+		let remotefmcuser: any = await firebaseServices.getUserDoc(
+			`@${client?.last_name.split(" ").join("")}${client?.id}`,
+		);
+		// console.log("remote user fcm token: ", remotefmcuser.fcm_token);
+
+		// console.log("prov_id", appointmentData.prov_id);
+		// console.log("appointment_id", appointmentID);
+		// console.log("client_id", appointmentData.client_id);
+		// console.log(appointmentData.prov_id);
+
+		try {
+			const res = await axios.post(
+				"https://ppfnhealthapp.com/api/report",
+				`appointment_id=${appointmentID}&provider_id=${provider_data.id}&beneficiary_id=${client?.id}&status=sent&title=${appointmentData?.service_name}`,
+				{
+					headers: {
+						Accept: "application/json",
+					},
+				},
+			);
 			if (res.status) {
+				const fcm_res = await sendFcm(
+					remotefmcuser.fcm_token,
+					`${provider_data.first_name} ${provider_data.last_name} just sent a new report`,
+					"Report",
+					{type: "REPORT"},
+				);
+
 				Toast.showToast({
 					message: "Report sent Successfully!",
 					type: "success",
 					duration: 2000,
 				});
+
+				navigate("reports");
 			}
 		} catch (error) {
 			Toast.showToast({
@@ -99,42 +157,16 @@ const UploadReport = () => {
 			});
 			console.log(JSON.stringify(error));
 		}
-	}, [provider_data.id, selectAppointment, uploadFile]);
+	}, [provider_data.id, appointmentID, uploadFile]);
 
 	const handleValue = useCallback((value: ItemValue) => {
-		setSelectedAppointment(value);
+		setAppointmentID(value);
 	}, []);
-	/* 	const handleService = useCallback((value: ItemValue) => {
-		setService(value);
-	}, []); */
-
-	useEffect(() => {
-		axios
-			.get(
-				`https://ppfnhealthapp.com/api/appointment/single?id=${selectAppointment}`,
-			)
-			.then(res => {
-				setAppointmentName(res.data);
-			})
-			.catch(error => {
-				console.log(error);
-			});
-	}, [selectAppointment]);
 
 	return (
 		<SafeAreaView style={{paddingHorizontal: 15}}>
-			{/* <Text style={styles.uploadTitle}>Update Report</Text>
-			<Dropdown
-			title="Services"
-			data={services}
-			onChange={handleService}
-			selectedValue={service}
-		/> */}
-
 			<Text>Select Beneficiary</Text>
-			<Picker
-				onValueChange={handleValue}
-				selectedValue={selectAppointment}>
+			<Picker onValueChange={handleValue} selectedValue={appointmentID}>
 				{appointments?.map(appoint => (
 					<Picker.Item
 						key={appoint.id}
@@ -144,7 +176,7 @@ const UploadReport = () => {
 				))}
 			</Picker>
 			<Text style={styles.uploadTitle}>
-				Appointment title: {`${appoinmentName?.service_name}`}
+				Appointment title: {`${appointmentData?.service_name}`}
 			</Text>
 
 			<TouchableWithoutFeedback

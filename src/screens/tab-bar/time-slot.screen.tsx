@@ -1,4 +1,4 @@
-import React, {memo, useCallback, useRef, useState} from "react";
+import React, {memo, useCallback, useMemo, useRef, useState} from "react";
 import {
 	SafeAreaView,
 	ScrollView,
@@ -8,15 +8,23 @@ import {
 	View,
 } from "react-native";
 import {Toast} from "react-native-awesome";
+import {
+	Calendar,
+	DateData,
+	WeekCalendar,
+	WeekCalendarProps,
+} from "react-native-calendars";
 import PagerView from "react-native-pager-view";
 import SIcon from "react-native-vector-icons/SimpleLineIcons";
 import {useSelector} from "react-redux";
+import {CustomCalendar} from "../../components/CustomCalendar";
 
 import ScheduleSelector from "../../components/ScheduleSelector";
 import {style} from "../../constants/style";
 import Layout from "../../layouts/DrawerScreenLayout";
 import {RootState} from "../../types/redux.type";
 import {WIDTH} from "../../utils/dim";
+
 const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 
 const Timeslot = memo(() => {
@@ -35,6 +43,7 @@ const Timeslot = memo(() => {
 			<Layout
 				title={`${provider_data.title}. ${provider_data.first_name} ${provider_data.last_name}`}
 				rating={provider_data.rating}>
+				{/* <WeekCalendar  /> */}
 				<PagerView
 					pageMargin={10}
 					ref={pagerRef}
@@ -102,6 +111,7 @@ const Meridian = memo(
 		tfs: string[];
 		handleWDChange: (s: number) => void;
 	}) => {
+		const [bookDates, setBookDates] = useState(new Set(""));
 		const [timeFrame, setTimeFrame] = useState<string>(tfs[0]);
 		const handleSubmit = useCallback(async () => {
 			Toast.showToast({
@@ -110,6 +120,44 @@ const Meridian = memo(
 				duration: 2000,
 			});
 		}, []);
+
+		const handleSelectedDates = useCallback(
+			(date: DateData) => {
+				if (
+					date.day >= new Date().getDate() &&
+					date.day >= new Date().getMonth() + 1
+				) {
+					const newBookDates = new Set(bookDates);
+
+					if (newBookDates.has(date.dateString)) {
+						newBookDates.delete(date.dateString);
+					} else {
+						newBookDates.add(date.dateString);
+					}
+					setBookDates(newBookDates);
+				} else {
+					Toast.showToast({
+						message: "You can't set appointment in the past!",
+						type: "warning",
+						duration: 2000,
+					});
+				}
+			},
+			[bookDates],
+		);
+
+		const markedDates = useMemo(
+			() =>
+				[...bookDates].reduce((obj, item) => {
+					obj[item] = {
+						selected: true,
+						marked: true,
+						selectedColor: "#FE593D",
+					};
+					return obj;
+				}, {}),
+			[bookDates],
+		);
 
 		return (
 			<ScrollView style={styles.constainer}>
@@ -130,35 +178,11 @@ const Meridian = memo(
 						/>
 					</TouchableOpacity>
 				</View>
-				<View style={styles.weekdays}>
-					{weekdays.map((day: string, idx: number) => {
-						return (
-							<TouchableOpacity
-								key={idx}
-								style={[
-									styles.weekdayContainer,
-									{
-										backgroundColor:
-											wkDay === idx
-												? "#f00"
-												: "transparent",
-									},
-								]}
-								onPress={() => handleWDChange(idx)}>
-								<Text
-									style={{
-										fontFamily: "AltonaSans-Regular",
-										color:
-											wkDay === idx
-												? style.highlight
-												: style.tertiaryColor,
-									}}>
-									{day}
-								</Text>
-							</TouchableOpacity>
-						);
-					})}
-				</View>
+				<CustomCalendar
+					handleDateChange={handleSelectedDates}
+					markers={markedDates}
+				/>
+
 				<ScheduleSelector
 					setSelectedTimeFrame={setTimeFrame}
 					selectedTimeFrame={timeFrame}

@@ -99,6 +99,22 @@ const ProviderReport = memo(() => {
 const ClientReport = memo(() => {
 	const {client_data} = useSelector((state: RootState) => state.userData);
 	const [fetchType, setFetchType] = useState(reportFetchTypes[0]);
+	const reports = useSelector((state: RootState) => state.reports);
+	const dispatch = useDispatch();
+	useEffect(() => {
+		(async () => {
+			const res = await axios.get(
+				`https://ppfnhealthapp.com/api/report`,
+				{
+					data: {
+						benfinciary_id: client_data.id,
+					},
+				},
+			);
+			dispatch(updateReport(res.data));
+			console.log("reports", res.data, client_data.id);
+		})();
+	}, [dispatch]);
 	return (
 		<Layout
 			title={`Hello ${client_data.first_name}!`}
@@ -110,18 +126,40 @@ const ClientReport = memo(() => {
 					setFetchType={setFetchType}
 				/>
 			</View>
-			{/*<FlatList
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 15 }}
-        data={reports}
-        keyExtractor={item => `${item.id * Math.random()}`}
-        renderItem={({ item }) => (
-          <View style={{ marginVertical: 7 }}>
-            <ReportsDocListItem {...item} />
-          </View>
-        )}
-      />*/}
-			<DefaultText text={"You do not have any reports yet"} />
+			{fetchType === "All" ? (
+				reports.length ? (
+					<FlatList
+						showsVerticalScrollIndicator={false}
+						contentContainerStyle={{paddingHorizontal: 15}}
+						data={reports}
+						keyExtractor={(_, id) => id.toString()}
+						renderItem={({item}) => (
+							<View style={{marginVertical: 7}}>
+								<ReportsDocListItem download {...item} />
+							</View>
+						)}
+					/>
+				) : (
+					<DefaultText text={"You do not have any reports yet."} />
+				)
+			) : null}
+			{fetchType === "New" ? (
+				reports.length ? (
+					<FlatList
+						showsVerticalScrollIndicator={false}
+						contentContainerStyle={{paddingHorizontal: 15}}
+						data={reports}
+						keyExtractor={(_, id) => id.toString()}
+						renderItem={({item}) => (
+							<View style={{marginVertical: 7}}>
+								<ReportsDocListItem download {...item} />
+							</View>
+						)}
+					/>
+				) : (
+					<DefaultText text={"You do not have any reports yet."} />
+				)
+			) : null}
 		</Layout>
 	);
 });

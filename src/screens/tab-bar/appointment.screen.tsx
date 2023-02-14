@@ -39,6 +39,8 @@ import {INavigateProps} from "../../interfaces";
 import Home from "./home.screen";
 import generateToken from "../../apis/generate-token";
 import callService from "../../services/call.service";
+import sendFcm from "../../apis/send-fcm";
+import firebaseServices from "../../services/firebase.service";
 
 export function RenderAppointments(props: {
 	item: IListAppointment;
@@ -59,22 +61,54 @@ export function RenderAppointments(props: {
 		console.log(channel);
 
 		if (user === "client") {
-			const token = await generateToken(channel, item.client_id);
-			// console.log(token);
+			// const token = await generateToken(channel, item.client_id);
+			const lastname = item.provider_name.split(" ").slice(1).join("");
+			let remotefmcuser: any = await firebaseServices.getUserDoc(
+				`@${lastname}${item.prov_id}`,
+			);
+			await sendFcm(
+				remotefmcuser.fcm_token,
+				`${item.client_name} starting a call`,
+				"Calling",
+				{
+					type: "CALL",
+					channel,
+					caller: item.client_name,
+					username: item.provider_name,
+					uid: item.prov_id,
+				},
+			);
 
 			navigate("call", {
 				channel,
-				token,
 				uid: item.client_id,
 				username: item.client_name,
 			});
 		} else if (user === "provider") {
-			const token = await generateToken(channel, item.prov_id);
+			// const token = await generateToken(channel, item.prov_id);
 			// console.log(token);
+
+			const lastname = item.client_name.split(" ").slice(1).join("");
+			console.log(lastname, "user");
+
+			let remotefmcuser: any = await firebaseServices.getUserDoc(
+				`@${lastname}${item.client_id}`,
+			);
+			await sendFcm(
+				remotefmcuser.fcm_token,
+				`${item.provider_name} starting a call`,
+				"Calling",
+				{
+					type: "CALL",
+					channel,
+					caller: item.provider_name,
+					username: item.client_name,
+					uid: item.client_id,
+				},
+			);
 
 			navigate("call", {
 				channel,
-				token,
 				uid: item.prov_id,
 				username: item.provider_name,
 			});

@@ -96,33 +96,29 @@ function ViewAppointment() {
 					<View
 						style={{
 							flexDirection: "row",
-							justifyContent: "space-between",
 							alignItems: "center",
+							padding: 10,
 						}}>
 						<Text
 							style={{
 								fontFamily: "AltonaSans-Regular",
 								fontSize: 16,
-								marginBottom: 3,
 								color: style.primaryColor,
 								width: 85,
-								padding: 4,
-								borderRadius: 10,
 							}}>
-							Status: {params.status}
+							Status
 						</Text>
-						{/* <Text
+						<Text
 							style={{
-								color: style.primaryColor,
-								fontFamily: 'AltonaSans-Regular',
+								color: style.tertiaryColor,
+								fontFamily: "AltonaSans-Regular",
 								fontSize: 16,
-								fontWeight: '500',
-							}}
-						>
-							Cost: N {params.price}
-						</Text> */}
+								fontWeight: "500",
+							}}>
+							{params.status}
+						</Text>
 					</View>
-					<Text
+					{/* <Text
 						style={{
 							color: style.primaryColor,
 							fontFamily: "AltonaSans-Regular",
@@ -138,7 +134,7 @@ function ViewAppointment() {
 							color: style.titleColor,
 						}}>
 						{params.facility}
-					</Text>
+					</Text> */}
 				</View>
 				<View style={{marginVertical: 10, marginHorizontal: 20}}>
 					<Text
@@ -174,17 +170,18 @@ function ViewAppointment() {
 						Cancellation reason:{" "}
 						{params?.cancellation_reason
 							? params.cancellation_reason
-							: "None"}
+							: "N/A"}
 					</Text>
-					<Text
-						style={{
-							color: style.primaryColor,
-							fontFamily: "AltonaSans-Regular",
-							fontSize: 18,
-						}}>
-						Note:{" "}
-						{params?.note_review ? params.note_review : "None"}
-					</Text>
+					{params.note_review ? (
+						<Text
+							style={{
+								color: style.primaryColor,
+								fontFamily: "AltonaSans-Regular",
+								fontSize: 18,
+							}}>
+							{params?.note_review}
+						</Text>
+					) : null}
 				</View>
 				{whichUser !== "client" ? (
 					<KeyboardAvoidingView
@@ -195,7 +192,6 @@ function ViewAppointment() {
 							placeholder="Note"
 							multiline
 							style={{
-								paddingHorizontal: 10,
 								height: 120,
 								borderWidth: 1.5,
 								borderColor: style.primaryColor,

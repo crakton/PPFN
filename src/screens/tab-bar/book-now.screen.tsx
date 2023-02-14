@@ -18,6 +18,8 @@ import {INavigateProps} from "../../interfaces";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {getUpcomingClientAppointment} from "../../redux/appointments";
 import {Toast} from "react-native-awesome";
+import sendFcm from "../../apis/send-fcm";
+import firebaseServices from "../../services/firebase.service";
 
 export default memo(() => {
 	const {navigate} = useNavigation<{navigate: INavigateProps}>();
@@ -121,6 +123,17 @@ export default memo(() => {
 									},
 								);
 								if (res.status === 200) {
+									let remotefmcuser: any =
+										await firebaseServices.getUserDoc(
+											`@${params.last_name}${params.id}`,
+										);
+									await sendFcm(
+										remotefmcuser.fcm_token,
+										`${client_data.first_name} ${client_data.last_name} just booked an appointment with you`,
+										"New Appointment",
+										{type: "APPOINTMENT"},
+									);
+
 									navigate("appointments");
 									Toast.showToast({
 										message:
