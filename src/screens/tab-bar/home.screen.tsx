@@ -1,7 +1,13 @@
-import React, {memo, useEffect, useMemo, useState} from "react";
-import providerByPopularity from "../../utils/providersByPopularity";
+import React, {
+	memo,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useState,
+} from "react";
 import {useSelector} from "react-redux";
 import {View, FlatList} from "react-native";
+import {Toast} from "react-native-awesome";	
 //navigators
 
 //types, interfaces and utils
@@ -10,6 +16,7 @@ import IProviderData from "../../interfaces/providerData";
 import IListProvider from "../../interfaces/listProvider";
 import whichSignedUser from "../../utils/whichSignedUser";
 import providersNearYou from "../../utils/providersNearYou";
+import providerByPopularity from "../../utils/providersByPopularity";
 import {RootState} from "../../types/redux.type";
 import {homeFetchTypes} from "../../constants/staticMenus";
 
@@ -24,15 +31,11 @@ import SearchBar from "../../components/SearchBar";
 import SetFetchType from "../../components/SetFetchType";
 import Layout from "../../layouts/DrawerScreenLayout";
 import ProviderHome from "./ProviderHome";
-import {useNavigation} from "@react-navigation/native";
-import {INavigateProps} from "../../interfaces";
 import {Stack} from "../../navigations/stack.navigation";
-import {Toast} from "react-native-awesome";
+import firebaseServices from "../../services/firebase.service";
 
 const Home = memo(() => {
 	const calls = new Map();
-	const {navigate} = useNavigation<{navigate: INavigateProps}>();
-
 	return (
 		<Stack.Navigator screenOptions={{headerShown: false}}>
 			<Stack.Screen name="home_main" component={HomeLayout} />
@@ -147,6 +150,11 @@ function HomeLayout(): JSX.Element {
 			}
 		})();
 	}, [client_data, provider_data]);
+
+	useLayoutEffect(() => {
+		const unsubscribe = firebaseServices.foregroundFCM();
+		return unsubscribe;
+	}, []);
 
 	const providersNY = useMemo(
 		() => providersNearYou(providers, whichUser?.data.state),

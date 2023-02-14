@@ -29,7 +29,7 @@ import {getClientData, getProviderData} from "../../redux/user/userData";
 import {Toast} from "react-native-awesome";
 import ActivityLoader from "../../components/ActivityLoader";
 import firebaseServices from "../../services/firebase.service";
-import emailVerification from "../../apis/email-verification";
+import {verifyProvider} from "../../apis/email-verification";
 
 const Login = memo(() => {
 	const {
@@ -95,7 +95,9 @@ const Login = memo(() => {
 					);
 
 					await firebaseServices.updateUserDoc(
-						`@${user_data.last_name}${user_data.id}`,
+						`@${user_data.last_name.split(" ").join("")}${
+							user_data.id
+						}`,
 						{fcm_token: await firebaseServices.getFCMToken()},
 					);
 
@@ -168,9 +170,9 @@ const Login = memo(() => {
 			console.warn(error);
 		}
 
-		const verifyProvider = await emailVerification(username);
+		const verifyProviderResponse = await verifyProvider(username);
 
-		if (verifyProvider?.status !== 200) {
+		if (verifyProviderResponse?.status !== 200) {
 			Toast.showToast({
 				message:
 					"Account does not exist. If you are a provider please contact Admin.",
@@ -217,7 +219,9 @@ const Login = memo(() => {
 								await AsyncStorage.getItem("provider_data"),
 							);
 							await firebaseServices.addUserDoc(
-								`@${provider_data.last_name}${provider_data.id}`,
+								`@${provider_data.last_name
+									.split(" ")
+									.join("")}${provider_data.id}`,
 								{
 									fcm_token:
 										await firebaseServices.getFCMToken(),
