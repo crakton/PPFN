@@ -1,4 +1,4 @@
-import {agora_tokenuri} from "@env";
+import { agora_tokenuri } from "@env";
 import axios from "axios";
 export default async function (ch: string, uid: string) {
 	try {
