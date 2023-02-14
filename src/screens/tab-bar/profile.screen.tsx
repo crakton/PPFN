@@ -2,11 +2,13 @@ import {memo, useEffect, useState} from "react";
 import Icon from "react-native-vector-icons/Feather";
 import {View, Text, TouchableOpacity, StyleSheet} from "react-native";
 import {CommonActions, useNavigation} from "@react-navigation/native";
+import storage from "@react-native-firebase/storage";
+import {useSelector} from "react-redux";
+
 import Layout from "../../layouts/ProfileLayout";
 import {activeUser} from "../../constants/data";
 import {style} from "../../constants/style";
 import {INavigateProps} from "../../interfaces";
-import {useSelector} from "react-redux";
 import {RootState} from "../../types/redux.type";
 import IProviderData from "../../interfaces/providerData";
 import IClientData from "../../interfaces/clientData";
@@ -65,13 +67,32 @@ const Profile = memo(() => {
 		data: IClientData | IProviderData;
 		user: string | undefined;
 	}>();
+	const [image, setImage] = useState<string>();
 	useEffect(() => {
 		(async () => {
 			const user = await whichSignedUser();
-			setWhichUser({
-				user,
-				data: user === "client" ? client_data : provider_data,
-			});
+
+			if (user === "client") {
+				setWhichUser({data: client_data, user});
+				const img = await storage()
+					.ref(
+						"profile_images/@" +
+							client_data.id +
+							client_data.first_name,
+					)
+					.getDownloadURL();
+				setImage(img);
+			} else {
+				setWhichUser({data: provider_data, user});
+				const img = await storage()
+					.ref(
+						"profile_images/@" +
+							provider_data.id +
+							provider_data.first_name,
+					)
+					.getDownloadURL();
+				setImage(img);
+			}
 		})();
 	}, [client_data, provider_data]);
 	if (!whichUser?.user) {
@@ -80,10 +101,7 @@ const Profile = memo(() => {
 
 	return (
 		<Layout
-			profileImage={whichUser.data.photo_name.replace(
-				"/image:",
-				"/image%3A",
-			)}
+			profileImage={image}
 			edit={false}
 			showRegisteredDateAndName={true}
 			userName={`${whichUser?.data.first_name} ${whichUser?.data.last_name}`}

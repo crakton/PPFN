@@ -1,6 +1,12 @@
 import React, {memo, useCallback, useState} from "react";
-import {View, Text, TouchableOpacity, Alert} from "react-native";
+import {View, Text, TouchableOpacity, Alert, Platform} from "react-native";
 import {TextInput} from "react-native-gesture-handler";
+import {ItemValue} from "@react-native-community/picker/typings/Picker";
+import {Toast} from "react-native-awesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {useNavigation} from "@react-navigation/native";
+import storage from "@react-native-firebase/storage";
+
 import {
 	genotype as Genotype,
 	nokRelationship,
@@ -13,14 +19,10 @@ import {RootState} from "../../types/redux.type";
 import axios from "axios";
 import {provider} from "../../apis/endpoints";
 import {getProviderData} from "../../redux/user/userData";
-import {useNavigation} from "@react-navigation/native";
 import {INavigateProps} from "../../interfaces";
 import {Dropdown} from "../../components/Dropdown";
-import {ItemValue} from "@react-native-community/picker/typings/Picker";
-import {Toast} from "react-native-awesome";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const UpdateProviderProfile = ({profileImage}: {profileImage: any}) => {
+const UpdateProviderProfile = ({profileImage}: {profileImage: string}) => {
 	const {provider_data} = useSelector((state: RootState) => state.userData);
 	const [gender, setGender] = useState<string>("");
 	const [address, setAddress] = useState<string>("");
@@ -55,9 +57,9 @@ const UpdateProviderProfile = ({profileImage}: {profileImage: any}) => {
 							{relationship_with_nok},
 							{phone_number},
 							{gender},
-							{photo_name: profileImage},
 							{_method: "put"},
 						];
+
 						const dataTransform = dataGroup.reduce(
 							(obj: string, item) => {
 								let key = Object.keys(item).toString();
@@ -73,9 +75,14 @@ const UpdateProviderProfile = ({profileImage}: {profileImage: any}) => {
 							"",
 						);
 
-						console.log("profile data", dataTransform);
-
 						if (dataTransform) {
+							if (profileImage) {
+								await storage()
+									.ref(
+										`profile_images/@${provider_data.id}${provider_data.first_name}`,
+									)
+									.putFile(profileImage);
+							}
 							const res = await updateProvider(
 								Number(provider_data.id),
 								dataTransform,
@@ -91,13 +98,15 @@ const UpdateProviderProfile = ({profileImage}: {profileImage: any}) => {
 										);
 										dispatch(getProviderData(res.data));
 										Toast.showToast({
-											message: "Successfully updated",
+											message: "Successfully updated!",
 											type: "success",
 											duration: 2000,
 										});
-										// navigate('profile');
+										navigate("profile");
 									})
-									.catch(err => {});
+									.catch(err => {
+										console.log(err)
+									});
 							}
 						} else {
 							Toast.showToast({
@@ -131,8 +140,7 @@ const UpdateProviderProfile = ({profileImage}: {profileImage: any}) => {
 		address,
 		relationship_with_nok,
 		phone_number,
-		gender,
-		profileImage,
+		// gender,
 		provider_data.id,
 	]);
 

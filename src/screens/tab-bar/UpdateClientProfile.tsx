@@ -1,7 +1,14 @@
 import React, {memo, useCallback, useState} from "react";
 import {View, Text, TouchableOpacity, Alert} from "react-native";
-import {style} from "../../constants/style";
 import {TextInput} from "react-native-gesture-handler";
+import {ItemValue} from "@react-native-community/picker/typings/Picker";
+import {Toast} from "react-native-awesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {useDispatch, useSelector} from "react-redux";
+import storage from "@react-native-firebase/storage";
+import {useNavigation} from "@react-navigation/native";
+
+import {style} from "../../constants/style";
 import {
 	bloodGroup,
 	eduction,
@@ -12,15 +19,12 @@ import {
 } from "../../constants/staticMenus";
 import updateClient from "../../apis/client/updateClient";
 import {styles} from "./EditProfile";
-import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../types/redux.type";
 import axios from "axios";
 import {client} from "../../apis/endpoints";
 import {getClientData} from "../../redux/user/userData";
 import {Dropdown} from "../../components/Dropdown";
-import {ItemValue} from "@react-native-community/picker/typings/Picker";
-import {Toast} from "react-native-awesome";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {INavigateProps} from "../../interfaces";
 
 const UpdateClientProfile = ({profileImage}: {profileImage: any}) => {
 	const {client_data} = useSelector((state: RootState) => state.userData);
@@ -34,6 +38,8 @@ const UpdateClientProfile = ({profileImage}: {profileImage: any}) => {
 	const [education, setEducation] = useState<ItemValue>("");
 	const [marital_status, setMaritalStatus] = useState<ItemValue>("");
 	const [relationship_with_nok, setRelationNok] = useState<ItemValue>("");
+
+	const {navigate} = useNavigation<{navigate: INavigateProps}>();
 
 	const dispatch = useDispatch();
 	const handleRelationNokSelection = useCallback((val: ItemValue) => {
@@ -54,6 +60,7 @@ const UpdateClientProfile = ({profileImage}: {profileImage: any}) => {
 	const handleStatusSelection = useCallback((val: ItemValue) => {
 		setMaritalStatus(val);
 	}, []);
+
 	const handleUpdate = useCallback(() => {
 		Alert.alert("Update profile", "Do you want to make these changes?", [
 			{
@@ -71,7 +78,6 @@ const UpdateClientProfile = ({profileImage}: {profileImage: any}) => {
 							{relationship_with_nok},
 							{phone_number},
 							{gender},
-							{photo_name: profileImage},
 							{_method: "put"},
 						];
 						const tranformDataGroup = dataGroup.reduce(
@@ -89,6 +95,13 @@ const UpdateClientProfile = ({profileImage}: {profileImage: any}) => {
 						);
 
 						if (tranformDataGroup) {
+							if (profileImage) {
+								await storage()
+									.ref(
+										`profile_images/@${client_data.id}${client_data.first_name}`,
+									)
+									.putFile(profileImage);
+							}
 							const res = await updateClient(
 								Number(client_data.id),
 								tranformDataGroup,
@@ -102,12 +115,15 @@ const UpdateClientProfile = ({profileImage}: {profileImage: any}) => {
 										);
 										dispatch(getClientData(res.data));
 										Toast.showToast({
-											message: "Successfully updated",
+											message: "Successfully updated!",
 											type: "success",
 											duration: 2000,
 										});
+										navigate("profile");
 									})
-									.catch(err => {});
+									.catch(err => {
+										console.log(err);
+									});
 							}
 						} else {
 							Toast.showToast({message: "Operation denied"});

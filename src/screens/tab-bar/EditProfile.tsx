@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {StyleSheet, Text, TouchableOpacity} from "react-native";
 import Layout from "../../layouts/ProfileLayout";
 import {style} from "../../constants/style";
@@ -9,20 +9,18 @@ import {RootState} from "../../types/redux.type";
 import whichSignedUser from "../../utils/whichSignedUser";
 import UpdateClientProfile from "./UpdateClientProfile";
 import Icon from "react-native-vector-icons/AntDesign";
-// import {
-// 	ImagePickerResponse,
-// launchCamera,
-// 	launchImageLibrary,
-// } from 'react-native-image-picker';
 import UpdateProviderProfile from "./UpdateProviderProfile";
+import {Toast} from "react-native-awesome";
 import {
+	DocumentPickerResponse,
 	isCancel,
 	isInProgress,
 	pickSingle,
 	types,
 } from "react-native-document-picker";
+import storage from "@react-native-firebase/storage";
 import ActivityLoader from "../../components/widgets/ActivityLoader";
-import {Toast} from "react-native-awesome";
+import {launchImageLibrary} from "react-native-image-picker";
 
 function EditProfile({navigation: {goBack}}: {navigation: {goBack: Function}}) {
 	const {client_data, provider_data} = useSelector(
@@ -32,52 +30,97 @@ function EditProfile({navigation: {goBack}}: {navigation: {goBack: Function}}) {
 		data: IClientData | IProviderData | undefined;
 		user: string;
 	}>({data: undefined, user: ""});
+	const [image, setImage] = useState<string>();
+
 	useEffect(() => {
 		(async () => {
 			const user = await whichSignedUser();
-			setUser(
-				user === "client"
-					? {data: client_data, user}
-					: {data: provider_data, user},
-			);
+			if (user === "client") {
+				setUser({data: client_data, user});
+				const img = await storage()
+					.ref(
+						"profile_images/@" +
+							client_data.id +
+							client_data.first_name,
+					)
+					.getDownloadURL();
+				setImage(img);
+			} else {
+				setUser({data: provider_data, user});
+				const img = await storage()
+					.ref(
+						"profile_images/@" +
+							provider_data.id +
+							provider_data.first_name,
+					)
+					.getDownloadURL();
+				setImage(img);
+			}
 		})();
 	}, [client_data, provider_data]);
 
 	const [profileImg, setProfileImg] = useState<string>();
+	// const [profileImg, setProfileImg] = useState<DocumentPickerResponse>();
 	const handleProfileImgSelection = useCallback(async () => {
-		try {
-			const image = await pickSingle({
-				type: types.images,
-				copyTo: "documentDirectory",
-				allowMultiSelection: false,
-				mode: "import",
-			});
+		// try {
+		// 	const image = await pickSingle({
+		// 		type: types.images,
+		// 		copyTo: "documentDirectory",
+		// 		allowMultiSelection: false,
+		// 		mode: "import",
+		// 	});
 
-			if (image.size > Math.pow(10, 5)) {
+		// 	if (image.size > Math.pow(10, 5)) {
+		// 		Toast.showToast({
+		// 			message: "Please use image lesser than 1MB",
+		// 			type: "warning",
+		// 			duration: 2000,
+		// 		});
+		// 	} else {
+		// 		/* ImgToBase64.getBase64String(image.uri).then((base64String: string) => {
+		// 			console.log(base64String);
+
+		// 			setProfileImg(base64String);
+		// 		}); */
+		// 		setProfileImg(image.uri);
+		// 	}
+		// } catch (e) {
+		// 	if (isCancel(e)) {
+		// 		Toast.showToast({message: "Operation denied"});
+		// 		// User cancelled the picker, exit any dialogs or menus and move on
+		// 	} else if (isInProgress(e)) {
+		// 		console.warn(
+		// 			"multiple pickers were opened, only the last will be considered",
+		// 		);
+		// 	} else {
+		// 		throw e;
+		// 	}
+		// }
+		try {
+			const image = await launchImageLibrary({
+				selectionLimit: 1,
+				mediaType: "photo",
+			});
+			if (image.didCancel) {
 				Toast.showToast({
-					message: "Please use image lesser than 1MB",
+					message: "Operation cancelled!",
 					type: "warning",
-					duration: 2000,
+				});
+			} else if (image.errorCode) {
+				Toast.showToast({
+					message: "Something happened!",
+					type: "danger",
+				});
+			} else if (image.assets[0].fileSize > 700000) {
+				Toast.showToast({
+					message: "File size is larger than 500KB",
+					type: "warning",
 				});
 			} else {
-				/* ImgToBase64.getBase64String(image.uri).then((base64String: string) => {
-					console.log(base64String);
-
-					setProfileImg(base64String);
-				}); */
-				setProfileImg(image.uri);
+				setProfileImg(image.assets[0]?.uri);
 			}
-		} catch (e) {
-			if (isCancel(e)) {
-				Toast.showToast({message: "Operation denied"});
-				// User cancelled the picker, exit any dialogs or menus and move on
-			} else if (isInProgress(e)) {
-				console.warn(
-					"multiple pickers were opened, only the last will be considered",
-				);
-			} else {
-				throw e;
-			}
+		} catch (error) {
+			console.log(error);
 		}
 	}, []);
 	if (!user.user) {
@@ -86,13 +129,7 @@ function EditProfile({navigation: {goBack}}: {navigation: {goBack: Function}}) {
 
 	return (
 		<Layout
-			profileImage={
-				profileImg
-					? profileImg
-					: user.data?.photo_name
-					? user.data.photo_name.replace("/image:", "/image%3A")
-					: ""
-			}
+			profileImage={profileImg ?? image}
 			profileImageBtn={
 				<TouchableOpacity
 					onPress={handleProfileImgSelection}
@@ -120,8 +157,8 @@ function EditProfile({navigation: {goBack}}: {navigation: {goBack: Function}}) {
 			}
 			edit={true}
 			showRegisteredDateAndName={true}
-			userName={`${user?.data.first_name} ${user?.data.last_name}`}
-			registeredDate={user?.data.address}
+			userName={`${user?.data?.first_name} ${user?.data?.last_name}`}
+			registeredDate={user?.data?.address}
 			backBtn={true}
 			goBack={goBack}>
 			{user.user === "client" ? (

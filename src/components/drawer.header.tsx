@@ -14,6 +14,8 @@ import FaIcon from "react-native-vector-icons/FontAwesome";
 import FIcon from "react-native-vector-icons/Foundation";
 import MCIcon from "react-native-vector-icons/MaterialCommunityIcons";
 import {useDispatch, useSelector} from "react-redux";
+import storage from "@react-native-firebase/storage";
+
 import {style, styles} from "../constants/style";
 import {INavigateProps} from "../interfaces";
 import IClientData from "../interfaces/clientData";
@@ -21,6 +23,7 @@ import IProviderData from "../interfaces/providerData";
 import {isSigned} from "../redux/auth/isSigned";
 import {RootState} from "../types/redux.type";
 import whichSignedUser from "../utils/whichSignedUser";
+import firebaseServices from "../services/firebase.service";
 
 export const DrawerHeader = () => {
 	const {provider_data, client_data} = useSelector(
@@ -30,11 +33,13 @@ export const DrawerHeader = () => {
 		user: string | undefined;
 		data: IClientData | IProviderData;
 	}>();
+	const [image, setImage] = useState<string>();
 	const dispatch = useDispatch();
 	const {reset, navigate} = useNavigation<{
 		navigate: INavigateProps;
 		reset: (state: {index: number; routes: {name: string}[]}) => void;
 	}>();
+
 	const handleLogout = useCallback(async () => {
 		try {
 			await AsyncStorage.setItem("is_signed", "no");
@@ -49,7 +54,10 @@ export const DrawerHeader = () => {
 				"user_data",
 				"provider_data",
 			]);
-			setTimeout(() => reset({index: 0, routes: [{name: "login"}]}), 100);
+			setTimeout(() => {
+				reset({index: 0, routes: [{name: "login"}]}), 100;
+				firebaseServices.signOut();
+			});
 		} catch (error) {
 			console.log(error);
 		}
@@ -58,10 +66,27 @@ export const DrawerHeader = () => {
 		(async () => {
 			try {
 				const user = await whichSignedUser();
-				setWhichUser({
-					user,
-					data: user === "client" ? client_data : provider_data,
-				});
+				if (user === "client") {
+					setWhichUser({data: client_data, user});
+					const img = await storage()
+						.ref(
+							"profile_images/@" +
+								client_data.id +
+								client_data.first_name,
+						)
+						.getDownloadURL();
+					setImage(img);
+				} else {
+					setWhichUser({data: provider_data, user});
+					const img = await storage()
+						.ref(
+							"profile_images/@" +
+								provider_data.id +
+								provider_data.first_name,
+						)
+						.getDownloadURL();
+					setImage(img);
+				}
 			} catch (error) {
 				console.error(error);
 			}
@@ -78,7 +103,11 @@ export const DrawerHeader = () => {
 				<View style={[styles.drawerHeaderAvatarContainer]}>
 					<Image
 						style={styles.drawerHeaderAvatar}
-						source={require("../assets/images/fallback.png")}
+						source={
+							image
+								? {uri: image}
+								: require("../assets/images/fallback.png")
+						}
 					/>
 					<TouchableOpacity
 						onPress={() => navigate("edit_profile")}
