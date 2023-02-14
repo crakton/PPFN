@@ -4,9 +4,11 @@ import {
 	useNavigationContainerRef,
 } from "@react-navigation/native";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
-import React, {memo, useEffect} from "react";
+import React, {memo, useEffect, useLayoutEffect} from "react";
 import {ErrorBoundary} from "react-native-awesome";
 import {useDispatch, useSelector} from "react-redux";
+import notifee, {EventType} from "@notifee/react-native";
+
 import ActivityLoader from "../components/ActivityLoader";
 
 import IClientData from "../interfaces/clientData";
@@ -28,16 +30,70 @@ import ViewReport from "../screens/ViewReport";
 import {RootState} from "../types/redux.type";
 import whichSignedUser from "../utils/whichSignedUser";
 import DrawerNav from "./drawer.navigation";
+import {INavigateProps} from "../interfaces";
 
 export const Stack = createNativeStackNavigator();
 
 const StackNav = memo(() => {
 	const dispatch = useDispatch();
 	const navigationContainerRef = useNavigationContainerRef();
-	const {reset} = useNavigation<{
+	const {reset, navigate} = useNavigation<{
+		navigate: INavigateProps;
 		reset: (state: {index: number; routes: {name: string}[]}) => void;
 	}>();
+
 	const {is_signed} = useSelector((state: RootState) => state.isSigned);
+
+	useEffect(() => {
+		const unsubscrbe = notifee.onForegroundEvent(async ({type, detail}) => {
+			if (
+				type === EventType.ACTION_PRESS &&
+				detail.pressAction?.id === "call"
+			) {
+				navigate("call", {
+					channel: detail.notification?.data?.channel,
+					username: detail.notification?.data?.username,
+					uid: detail.notification?.data?.uid,
+				});
+				await notifee.decrementBadgeCount();
+				await notifee.cancelNotification(detail.notification.id);
+			}
+			if (
+				type === EventType.ACTION_PRESS &&
+				detail.pressAction?.id === "others"
+			) {
+				navigate("notifications");
+				await notifee.decrementBadgeCount();
+				await notifee.cancelNotification(detail.notification.id);
+			}
+		});
+
+		return () => unsubscrbe();
+	}, []);
+
+	useEffect(() => {
+		const unsubscribe = notifee.onBackgroundEvent(
+			async ({type, detail}) => {
+				if (
+					type === EventType.ACTION_PRESS &&
+					detail.pressAction?.id === "call"
+				) {
+					navigate("notifications");
+					notifee.decrementBadgeCount();
+					await notifee.cancelNotification(detail.notification.id);
+				}
+				if (
+					type === EventType.ACTION_PRESS &&
+					detail.pressAction?.id === "others"
+				) {
+					navigate("notifications");
+					notifee.decrementBadgeCount();
+					await notifee.cancelNotification(detail.notification.id);
+				}
+			},
+		);
+		return unsubscribe;
+	}, []);
 
 	useEffect(() => {
 		(async function () {
