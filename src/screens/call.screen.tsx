@@ -1,11 +1,9 @@
-import {agora_appid} from "@env";
+import {agora_appid, agora_tokenuri} from "@env";
 import {useNavigation} from "@react-navigation/native";
-import AgoraUIKit from "agora-rn-uikit";
+import AgoraUIKit, {DualStreamMode} from "agora-rn-uikit";
 import React, {memo} from "react";
 
 import CallLayout from "../layouts/call.layout";
-
-const generateID = () => Math.floor(Math.random() * 1000);
 
 const Call = memo(({route}: {route: any}) => {
 	const navigation = useNavigation();
@@ -14,12 +12,16 @@ const Call = memo(({route}: {route: any}) => {
 			<AgoraUIKit
 				connectionData={{
 					appId: agora_appid,
-					rtcToken: route.params.token,
+					tokenUrl: agora_tokenuri,
 					channel: route.params.channel,
 					rtcUid: parseInt(route.params.uid),
 					username: route.params.username,
 				}}
-				settings={{displayUsername: true}}
+				settings={{
+					displayUsername: true,
+					dual: true,
+					initialDualStreamMode: DualStreamMode.HIGH,
+				}}
 				rtcCallbacks={{
 					EndCall() {
 						navigation.goBack();
