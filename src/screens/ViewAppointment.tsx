@@ -1,5 +1,7 @@
-import {useRoute} from "@react-navigation/native";
-import React, {memo, useEffect, useState} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {useNavigation, useRoute} from "@react-navigation/native";
+import axios from "axios";
+import React, {memo, useCallback, useEffect, useState} from "react";
 import {
 	KeyboardAvoidingView,
 	SafeAreaView,
@@ -9,20 +11,86 @@ import {
 	View,
 } from "react-native";
 import {Toast} from "react-native-awesome";
+import {useDispatch} from "react-redux";
 import {HeaderWithBackButton} from "../components/HeaderWithBackButton";
 import {style} from "../constants/style";
+import {INavigateProps} from "../interfaces";
 import IListAppointment from "../interfaces/listAppointment";
+import {
+	getPreviousProviderAppointment,
+	getUpcomingProviderAppointment,
+} from "../redux/appointments";
 import whichSignedUser from "../utils/whichSignedUser";
 import formatDate from "./auth/formatDate";
 
 function ViewAppointment() {
+	const {navigate} = useNavigation<{navigate: INavigateProps}>();
 	const {params}: {params: IListAppointment} = useRoute();
+	const [notes, setNotes] = useState("");
+
+	const dispatch = useDispatch();
 	const [whichUser, setWhichUser] = useState<string>();
 	useEffect(() => {
 		(async () => {
 			setWhichUser(await whichSignedUser());
 		})();
 	}, []);
+
+	const handleAppointmentUpdate = useCallback(async () => {
+		if (params.service_provided === "Y") {
+			setNotes("");
+			return;
+		}
+		try {
+			const updateAppointment = {
+				...params,
+				service_provided: "Y",
+				status: "Finished",
+				note_review: notes.trim(),
+			};
+			const response = await axios.put(
+				`https://ppfnhealthapp.com/api/appointment/${params.id}`,
+				updateAppointment,
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			if (response.status === 200) {
+				await AsyncStorage.setItem(
+					"upcoming_provider_appointment",
+					await axios(
+						`https://ppfnhealthapp.com/api/appointment/provider_upcoming?prov_id=${params.prov_id}`,
+					).then(res => JSON.stringify(res.data)),
+				);
+				await AsyncStorage.setItem(
+					"previous_provider_appointment",
+					await axios(
+						`https://ppfnhealthapp.com/api/appointment/provider_previous?prov_id=${params.prov_id}`,
+					).then(res => JSON.stringify(res.data)),
+				);
+				const upcoming = JSON.parse(
+					await AsyncStorage.getItem("upcoming_provider_appointment"),
+				);
+				const previous = JSON.parse(
+					await AsyncStorage.getItem("previous_provider_appointment"),
+				);
+
+				dispatch(getUpcomingProviderAppointment(upcoming));
+				dispatch(getPreviousProviderAppointment(previous));
+
+				Toast.showToast({
+					message: "Appointment successfully updated!",
+					type: "success",
+					duration: 1000,
+				});
+				navigate("appointments");
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	}, [dispatch, notes]);
 	return (
 		<SafeAreaView style={{flex: 1}}>
 			<HeaderWithBackButton goback />
@@ -189,6 +257,12 @@ function ViewAppointment() {
 							marginHorizontal: 15,
 						}}>
 						<TextInput
+							onChangeText={val => setNotes(val)}
+							value={
+								params.service_provided === "Y"
+									? params.note_review
+									: notes
+							}
 							placeholder="Note"
 							multiline
 							style={{
@@ -197,14 +271,14 @@ function ViewAppointment() {
 								borderColor: style.primaryColor,
 								borderRadius: 15,
 								marginBottom: 10,
+								paddingHorizontal: 12,
 							}}
 						/>
 						<TouchableOpacity
-							onPress={() =>
-								Toast.showToast({
-									message: "Not supported by API",
-								})
+							disabled={
+								params.service_provided === "Y" ? true : false
 							}
+							onPress={handleAppointmentUpdate}
 							style={{
 								justifyContent: "center",
 								alignItems: "center",

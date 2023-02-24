@@ -41,8 +41,10 @@ import generateToken from "../../apis/generate-token";
 import callService from "../../services/call.service";
 import sendFcm from "../../apis/send-fcm";
 import firebaseServices from "../../services/firebase.service";
+import {fetchText} from "react-native-svg/lib/typescript/xml";
 
 export function RenderAppointments(props: {
+	fetchType: string;
 	item: IListAppointment;
 	navigate: INavigateProps;
 	providerphone?: string;
@@ -84,7 +86,7 @@ export function RenderAppointments(props: {
 				uid: item.client_id,
 				username: item.client_name,
 			});
-		} else if (user === "provider") {
+		} else {
 			// const token = await generateToken(channel, item.prov_id);
 			// console.log(token);
 
@@ -94,6 +96,8 @@ export function RenderAppointments(props: {
 			let remotefmcuser: any = await firebaseServices.getUserDoc(
 				`@${lastname}${item.client_id}`,
 			);
+			console.log("fcm token", remotefmcuser);
+
 			await sendFcm(
 				remotefmcuser.fcm_token,
 				`${item.provider_name} starting a call`,
@@ -168,11 +172,17 @@ export function RenderAppointments(props: {
 						name="calendar"
 					/>
 				</TouchableOpacity>
-				<TouchableOpacity
-					onPress={handleCall}
-					style={styles.primaryBtn}>
-					<AntIcon color={style.highlight} size={30} name="phone" />
-				</TouchableOpacity>
+				{props.fetchType === "Previous" ? null : (
+					<TouchableOpacity
+						onPress={handleCall}
+						style={styles.primaryBtn}>
+						<AntIcon
+							color={style.highlight}
+							size={30}
+							name="phone"
+						/>
+					</TouchableOpacity>
+				)}
 			</View>
 		</View>
 	);
@@ -297,7 +307,7 @@ const Appointment = memo(() => {
 						data={upcoming_client_appointment}
 						keyExtractor={(_, id) => id.toString()}
 						renderItem={({item}) =>
-							RenderAppointments({item, navigate})
+							RenderAppointments({item, navigate, fetchType})
 						}
 					/>
 				) : (
@@ -312,7 +322,7 @@ const Appointment = memo(() => {
 						data={previous_client_appointment}
 						keyExtractor={(_, id) => id.toString()}
 						renderItem={({item}) =>
-							RenderAppointments({item, navigate})
+							RenderAppointments({item, navigate, fetchType})
 						}
 					/>
 				) : (

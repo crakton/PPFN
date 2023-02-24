@@ -19,6 +19,7 @@ import {
 	types,
 } from "react-native-document-picker";
 import {TouchableWithoutFeedback} from "react-native-gesture-handler";
+import {launchImageLibrary} from "react-native-image-picker";
 import AntIcon from "react-native-vector-icons/AntDesign";
 import {useSelector} from "react-redux";
 import sendFcm from "../apis/send-fcm";
@@ -84,13 +85,18 @@ const UploadReport = () => {
 
 	const handleOnSelectUpload = useCallback(async () => {
 		try {
+			// const singleFile = await launchImageLibrary({
+			// 	mediaType: "mixed",
+			// });
+
+			// setUploadFile(singleFile?.assets[0]);
 			const singleFile = await pickSingle({
-				type: [types.doc, types.pdf, types.docx],
+				type: [types.doc, types.pdf, types.docx, types.images],
 				presentationStyle: "fullScreen",
 			});
 
 			setUploadFile(singleFile);
-			console.log("File selected Successfully!", singleFile);
+			console.log("File selected Successfully!", singleFile.uri);
 		} catch (error) {
 			//handle errors
 			//if user cancels
@@ -124,15 +130,38 @@ const UploadReport = () => {
 		// console.log(appointmentData.prov_id);
 
 		try {
+			const formdata = new FormData();
+
+			formdata.append("appointment_id", appointmentID);
+			formdata.append("beneficiary_id", client?.id);
+			formdata.append("provider_id", provider_data.id);
+			formdata.append("title", appointmentData.service_name);
+			formdata.append("file", {
+				uri: uploadFile?.uri,
+				name: uploadFile?.name,
+				type: uploadFile?.type,
+			});
+
+			console.log("form data", formdata);
+
 			const res = await axios.post(
 				"https://ppfnhealthapp.com/api/report",
-				`appointment_id=${appointmentID}&provider_id=${provider_data.id}&beneficiary_id=${client?.id}&status=sent&title=${appointmentData?.service_name}`,
+				formdata,
+				// {
+
+				// 	provider_id: provider_data.id,
+				// 	beneficiary_id: client?.id,
+				// 	title: appointmentData.service_name,
+				// 	file: uploadFile?.uri,
+				// },
 				{
 					headers: {
-						Accept: "application/json",
+						"Content-Type": "multipart/form-data",
 					},
 				},
 			);
+			console.log("report upload message: ", res);
+
 			if (res.status) {
 				const fcm_res = await sendFcm(
 					remotefmcuser.fcm_token,
@@ -155,7 +184,8 @@ const UploadReport = () => {
 				type: "warning",
 				duration: 2000,
 			});
-			console.log(JSON.stringify(error));
+			console.log("report upload error", error);
+			// console.log(JSON.stringify(error));
 		}
 	}, [provider_data.id, appointmentID, uploadFile]);
 

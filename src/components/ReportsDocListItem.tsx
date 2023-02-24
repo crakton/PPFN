@@ -12,14 +12,49 @@ import {updateReport} from "../redux/reports";
 import {useNavigation} from "@react-navigation/native";
 import {INavigateProps} from "../interfaces";
 import {Toast} from "react-native-awesome";
+import RNFetchBlob from "rn-fetch-blob";
 
 export default function ReportDocListItem(props: any) {
 	const {provider_data} = useSelector((state: RootState) => state.userData);
 	const dispatch = useDispatch();
 	const {navigate} = useNavigation<{navigate: INavigateProps}>();
 
-	const handleDownload = useCallback((id: number) => {}, []);
-	const handlePreview = useCallback((id: number) => {}, []);
+	const handleDownload = useCallback((id: number) => {
+		if (props.file_path) {
+			var date = Date.now();
+			var url = props.file_path;
+			var ext = url.split(".").slice(-1).join("");
+			console.log(ext);
+
+			const {config, fs} = RNFetchBlob;
+			let DocumentDir = fs.dirs.DownloadDir;
+			let options = {
+				fileCache: true,
+				addAndroidDownloads: {
+					useDownloadManager: true,
+					notification: true,
+					path: DocumentDir + "/file_" + date.toString() + ext,
+					description: "File",
+				},
+			};
+
+			config(options)
+				.fetch("GET", url)
+				.then(res => {
+					Toast.showToast({
+						message: "File successfully downloaded!",
+						type: "success",
+					});
+				});
+		}
+
+		console.log(props);
+	}, []);
+
+	function extention(filename: any) {
+		return /[.]/.exec(filename) ? /[^.]+$/.exec(filename) : undefined;
+	}
+	// const handlePreview = useCallback((id: number) => {}, []);
 	const handleDeleteReport = useCallback(
 		(id: number) => {
 			Alert.alert(
@@ -29,25 +64,36 @@ export default function ReportDocListItem(props: any) {
 					{
 						text: "confirm",
 						onPress: async () => {
+							console.log("report id: ", id);
+							console.log("provider id: ", provider_data.id);
 							try {
 								const response = await axios({
 									url: `https://ppfnhealthapp.com/api/report/${id}`,
-									method: "POST",
-									data: `provider_id=${provider_data.id}&_methhod=delete`,
+									method: "DELETE",
+									// data: {
+									// 	provider_id: provider_data.id,
+									// 	_methhod: "delete",
+									// },
 									headers: {
-										"Content-Type": "multipart/form-data",
+										"Content-Type": "application/json",
 									},
 								});
+								console.log(
+									"delete operations: ",
+									response.data,
+								);
+								// const response = await axios({
+								// 	url: `https://ppfnhealthapp.com/api/report/${id}`,
+								// 	method: "POST",
+								// 	data: `provider_id=${provider_data.id}&_methhod=delete`,
+								// 	headers: {
+								// 		"Content-Type": "multipart/form-data",
+								// 	},
+								// });
 								if (response.status === 200) {
 									axios
 										.get(
-											`https://ppfnhealthapp.com/api/report`,
-											{
-												data: {
-													provider_id:
-														provider_data.id,
-												},
-											},
+											`https://ppfnhealthapp.com/api/report?provider_id=${provider_data.id}`,
 										)
 										.then(res => {
 											Toast.showToast({
@@ -64,9 +110,10 @@ export default function ReportDocListItem(props: any) {
 							} catch (error: any) {
 								if (error.message === "Network Error") {
 									Toast.showToast({message: "Network Error"});
-									console.log(error);
+									console.log("REPORT ERRORS", error);
 								}
-								console.log(JSON.stringify(error));
+								// console.log(JSON.stringify(error));
+								console.log("REPORT ERRORS", error);
 							}
 						},
 					},
@@ -120,7 +167,7 @@ export default function ReportDocListItem(props: any) {
 			<View style={{flexDirection: "column"}}>
 				{props.download ? (
 					<>
-						<TouchableOpacity
+						{/* <TouchableOpacity
 							onPress={() => handlePreview(props.id)}
 							style={styles.secondaryBtn}>
 							<AntIcon
@@ -128,7 +175,7 @@ export default function ReportDocListItem(props: any) {
 								size={30}
 								name="eye"
 							/>
-						</TouchableOpacity>
+						</TouchableOpacity> */}
 						<TouchableOpacity
 							style={styles.primaryBtn}
 							onPress={() => handleDownload(props.id)}>

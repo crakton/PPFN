@@ -3,6 +3,7 @@ import {useNavigation} from "@react-navigation/native";
 import axios from "axios";
 import React, {memo, useEffect, useState} from "react";
 import {FlatList, View} from "react-native";
+import {Toast} from "react-native-awesome";
 import {useDispatch, useSelector} from "react-redux";
 
 //components
@@ -53,7 +54,7 @@ const ProviderHome = () => {
 				dispatch(getPreviousProviderAppointment(JSON.parse(previous)));
 			} catch (error: any) {
 				if (error.message === "Network Error") {
-					Toast("Network Error");
+					Toast.showToast({message: "Network Error"});
 				}
 				throw new Error(JSON.stringify(error));
 			}
@@ -84,6 +85,7 @@ const ProviderHome = () => {
 								item,
 								navigate,
 								providerphone: provider_data.phone_number,
+								fetchType,
 							})
 						}
 					/>
@@ -103,6 +105,7 @@ const ProviderHome = () => {
 								item,
 								navigate,
 								providerphone: provider_data.phone_number,
+								fetchType,
 							})
 						}
 					/>

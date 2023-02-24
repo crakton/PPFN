@@ -57,25 +57,22 @@ const UpdateProviderProfile = ({profileImage}: {profileImage: string}) => {
 							{relationship_with_nok},
 							{phone_number},
 							{gender},
-							{_method: "put"},
 						];
 
 						const dataTransform = dataGroup.reduce(
-							(obj: string, item) => {
+							(obj: {}, item) => {
 								let key = Object.keys(item).toString();
 								let value = Object.values(item).toString();
 
 								if (value) {
-									obj = obj.concat(
-										key + "=" + value.trim() + "&",
-									);
+									obj[key] = value;
 								}
 								return obj;
 							},
-							"",
+							{},
 						);
 
-						if (dataTransform) {
+						if (Object.keys(dataTransform).length) {
 							if (profileImage) {
 								await storage()
 									.ref(
@@ -105,7 +102,7 @@ const UpdateProviderProfile = ({profileImage}: {profileImage: string}) => {
 										navigate("profile");
 									})
 									.catch(err => {
-										console.log(err)
+										console.log(err);
 									});
 							}
 						} else {
@@ -140,8 +137,9 @@ const UpdateProviderProfile = ({profileImage}: {profileImage: string}) => {
 		address,
 		relationship_with_nok,
 		phone_number,
-		// gender,
+		gender,
 		provider_data.id,
+		profileImage,
 	]);
 
 	return (

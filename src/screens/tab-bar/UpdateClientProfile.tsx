@@ -80,31 +80,42 @@ const UpdateClientProfile = ({profileImage}: {profileImage: any}) => {
 							{gender},
 							{_method: "put"},
 						];
-						const tranformDataGroup = dataGroup.reduce(
+						const formdata = new FormData();
+						const dataTransform = dataGroup.reduce(
 							(obj: string, item) => {
 								let key = Object.keys(item).toString();
 								let value = Object.values(item).toString();
+
 								if (value) {
-									obj = obj.concat(
-										key + "=" + value.trim() + "&",
-									);
+									obj += key + "=" + value + "&";
+									formdata.append(key, value);
 								}
 								return obj;
 							},
 							"",
 						);
 
-						if (tranformDataGroup) {
+						console.log(formdata);
+
+						console.log(dataTransform);
+
+						if (dataTransform) {
 							if (profileImage) {
 								await storage()
 									.ref(
 										`profile_images/@${client_data.id}${client_data.first_name}`,
 									)
 									.putFile(profileImage);
+								Toast.showToast({
+									message: "Successfully updated!",
+									type: "success",
+									duration: 2000,
+								});
+								navigate("profile");
 							}
 							const res = await updateClient(
 								Number(client_data.id),
-								tranformDataGroup,
+								formdata,
 							);
 							if (res?.status === 200) {
 								axios(`${client}/single?id=${client_data.id}`)

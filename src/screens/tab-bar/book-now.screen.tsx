@@ -24,12 +24,13 @@ import firebaseServices from "../../services/firebase.service";
 export default memo(() => {
 	const {navigate} = useNavigation<{navigate: INavigateProps}>();
 	const {params} = useRoute<RouteProp<{params: IListProvider}>>();
-
+	const [slots, setSlots] = useState([]);
 	const [bookDates, setBookDates] = useState(new Set(""));
 	const [selectedSchedule, setSelectedSchedule] = useState<number>();
 	const handleSelectedSchedule = useCallback((val: number) => {
 		setSelectedSchedule(val);
 	}, []);
+
 
 	const {client_data} = useSelector((state: RootState) => state.userData);
 	const handleSelectedDates = useCallback(
@@ -101,7 +102,7 @@ export default memo(() => {
 									client_name: `${client_data.first_name} ${client_data.last_name}`,
 									facility: params.facility,
 									client_contact: client_data.phone_number,
-									service_name: "Immunization and Polio",
+									service_name: params.category,
 									price: "1200",
 									discount: "",
 									canceled: "N",
@@ -125,7 +126,9 @@ export default memo(() => {
 								if (res.status === 200) {
 									let remotefmcuser: any =
 										await firebaseServices.getUserDoc(
-											`@${params.last_name}${params.id}`,
+											`@${params.last_name
+												.split(" ")
+												.join("")}${params.id}`,
 										);
 									await sendFcm(
 										remotefmcuser.fcm_token,

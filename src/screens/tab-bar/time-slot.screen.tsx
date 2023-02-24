@@ -1,41 +1,189 @@
-import React, {memo, useCallback, useMemo, useRef, useState} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {useNavigation} from "@react-navigation/native";
+import axios from "axios";
+import React, {memo, useCallback, useEffect, useMemo, useState} from "react";
+import {FlatList} from "react-native";
 import {
 	SafeAreaView,
-	ScrollView,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
 	View,
 } from "react-native";
 import {Toast} from "react-native-awesome";
-import {
-	Calendar,
-	DateData,
-	WeekCalendar,
-	WeekCalendarProps,
-} from "react-native-calendars";
-import PagerView from "react-native-pager-view";
-import SIcon from "react-native-vector-icons/SimpleLineIcons";
-import {useSelector} from "react-redux";
+import {DateData} from "react-native-calendars";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import {useDispatch, useSelector} from "react-redux";
 import {CustomCalendar} from "../../components/CustomCalendar";
+import {RippleButton} from "../../components/widgets/RippleButton";
 
-import ScheduleSelector from "../../components/ScheduleSelector";
 import {style} from "../../constants/style";
+import {INavigateProps} from "../../interfaces";
 import Layout from "../../layouts/DrawerScreenLayout";
+import {getProviderData} from "../../redux/user/userData";
 import {RootState} from "../../types/redux.type";
 import {WIDTH} from "../../utils/dim";
 
-const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
-
 const Timeslot = memo(() => {
-	const pagerRef = useRef<PagerView>(null);
-	const [wkDay, setWkDay] = useState<number>();
 	const {provider_data} = useSelector((state: RootState) => state.userData);
-	const handleMeridianChange = useCallback(
-		(day: number) => {
-			setWkDay(day);
+	const [slots, setSlots] = useState([]);
+	const dispatch = useDispatch();
+	const {navigate} = useNavigation<{navigate: INavigateProps}>();
+
+	const [bookDates, setBookDates] = useState(new Set(""));
+
+	useEffect(() => {
+		if (provider_data.doctorSlot === undefined) {
+			setSlots([]);
+		} else {
+			setSlots(JSON.parse(provider_data.doctorSlot));
+		}
+		// setSlots(JSON.parse(provider_data.doctorSlot));
+	}, [provider_data]);
+
+	const handleSubmit = useCallback(async () => {
+		const dates = Array.from(bookDates); //convert Set to Array
+		if (!dates.length) {
+			Toast.showToast({
+				message: "Please set avail dates.",
+				type: "warning",
+				duration: 2000,
+			});
+			return;
+		}
+
+		try {
+			const Slots: string[] = slots; //get a copy of the slots Array
+			Slots.push(...dates); // merge the two arrays
+			const uniqSlots = new Set(Slots);
+			const response = await axios.put(
+				`https://ppfnhealthapp.com/api/provider/${provider_data.id}`,
+				{
+					doctorSlot: JSON.stringify(Array.from(uniqSlots)), //send in the form of unique array elements
+				},
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+				},
+			);
+
+			if (response.status) {
+				if (response.data.provider.doctorSlot) {
+					const data = Object.assign({}, response.data.provider);
+					delete data.hash; //remove password from being store on the device
+					setSlots(JSON.parse(response.data.provider.doctorSlot));
+					await AsyncStorage.setItem(
+						"provider_data",
+						JSON.stringify(response.data.provider),
+					);
+
+					dispatch(getProviderData(data));
+					navigate("timeslot");
+				}
+
+				Toast.showToast({
+					message: "Time slot successfully set.",
+					type: "success",
+					duration: 2000,
+				});
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	}, [bookDates, dispatch, slots]);
+
+	const handleSelectedDates = useCallback(
+		(date: DateData) => {
+			const {dateString, day, month, year} = date;
+			if (
+				year >= new Date().getFullYear() &&
+				month >= new Date().getMonth() + 1 &&
+				day >= new Date().getDate()
+			) {
+				const newBookDates = new Set(bookDates);
+
+				if (newBookDates.has(dateString)) {
+					newBookDates.delete(dateString);
+				} else {
+					newBookDates.add(dateString);
+				}
+				setBookDates(newBookDates);
+			} else if (month > new Date().getMonth() + 1) {
+				const newBookDates = new Set(bookDates);
+
+				if (newBookDates.has(dateString)) {
+					newBookDates.delete(dateString);
+				} else {
+					newBookDates.add(dateString);
+				}
+				setBookDates(newBookDates);
+			} else {
+				Toast.showToast({
+					message: "You can't set appointment in the past!",
+					type: "warning",
+					duration: 1000,
+				});
+			}
 		},
-		[wkDay],
+		[bookDates],
+	);
+
+	const handleDeleteSlot = useCallback(
+		async (id: number) => {
+			const updatedSlots = slots.filter((_, idx) => idx !== id);
+			console.log("updates on slots", updatedSlots);
+
+			try {
+				const response = await axios.put(
+					`https://ppfnhealthapp.com/api/provider/${provider_data.id}`,
+					{
+						doctorSlot: JSON.stringify(updatedSlots),
+					},
+					{
+						headers: {
+							"Content-Type": "application/json",
+						},
+					},
+				);
+				if (response.status) {
+					if (response.data.provider.doctorSlot) {
+						const data = Object.assign({}, response.data.provider);
+						delete data.hash; //remove password from being store on the device
+						setSlots(JSON.parse(response.data.provider.doctorSlot));
+						await AsyncStorage.setItem(
+							"provider_data",
+							JSON.stringify(response.data.provider),
+						);
+
+						dispatch(getProviderData(data));
+					}
+
+					Toast.showToast({
+						message: "Slot successfully removed.",
+						type: "success",
+						duration: 2000,
+					});
+					navigate("timeslot");
+				}
+			} catch (error) {
+				console.log(error);
+			}
+		},
+		[dispatch, slots],
+	);
+
+	const markedDates = useMemo(
+		() =>
+			[...bookDates].reduce((obj, item) => {
+				obj[item] = {
+					selected: true,
+					marked: true,
+					selectedColor: "#FE593D",
+				};
+				return obj;
+			}, {}),
+		[bookDates],
 	);
 
 	return (
@@ -44,150 +192,13 @@ const Timeslot = memo(() => {
 				title={`${provider_data.title}. ${provider_data.first_name} ${provider_data.last_name}`}
 				rating={provider_data.rating}>
 				{/* <WeekCalendar  /> */}
-				<PagerView
-					pageMargin={10}
-					ref={pagerRef}
-					style={styles.pagerView}
-					initialPage={0}>
-					<Meridian
-						tfs={[
-							"08:00 - 08-30",
-							"09:00 - 09-30",
-							"10:00 - 10-30",
-							"11:00 - 11-30",
-						]}
-						key={1}
-						meridian={"Morning"}
-						handleWDChange={handleMeridianChange}
-						wkDay={wkDay}
-						handleNext={() => pagerRef.current?.setPage(1)}
-					/>
-					<Meridian
-						tfs={[
-							"12:00 - 12-30",
-							"13:00 - 13-30",
-							"14:00 - 14-30",
-							"15:00 - 15-30",
-						]}
-						key={2}
-						meridian={"Afternoon"}
-						handleWDChange={handleMeridianChange}
-						wkDay={wkDay}
-						handleNext={() => pagerRef.current?.setPage(2)}
-						handlePrev={() => pagerRef.current?.setPage(0)}
-					/>
-					<Meridian
-						tfs={[
-							"16:00 - 16-30",
-							"17:00 - 17-30",
-							"18:00 - 18-30",
-							"19:00 - 19-30",
-						]}
-						key={3}
-						meridian={"Evening"}
-						handleWDChange={handleMeridianChange}
-						wkDay={wkDay}
-						handlePrev={() => pagerRef.current?.setPage(1)}
-					/>
-				</PagerView>
-			</Layout>
-		</SafeAreaView>
-	);
-});
 
-const Meridian = memo(
-	({
-		meridian,
-		handlePrev,
-		handleNext,
-		wkDay,
-		tfs,
-		handleWDChange,
-	}: {
-		meridian: string;
-		handlePrev?: () => void;
-		handleNext?: () => void;
-		wkDay: number | undefined;
-		tfs: string[];
-		handleWDChange: (s: number) => void;
-	}) => {
-		const [bookDates, setBookDates] = useState(new Set(""));
-		const [timeFrame, setTimeFrame] = useState<string>(tfs[0]);
-		const handleSubmit = useCallback(async () => {
-			Toast.showToast({
-				message: "Time slot successfully set.",
-				type: "success",
-				duration: 2000,
-			});
-		}, []);
-
-		const handleSelectedDates = useCallback(
-			(date: DateData) => {
-				if (
-					date.day >= new Date().getDate() &&
-					date.day >= new Date().getMonth() + 1
-				) {
-					const newBookDates = new Set(bookDates);
-
-					if (newBookDates.has(date.dateString)) {
-						newBookDates.delete(date.dateString);
-					} else {
-						newBookDates.add(date.dateString);
-					}
-					setBookDates(newBookDates);
-				} else {
-					Toast.showToast({
-						message: "You can't set appointment in the past!",
-						type: "warning",
-						duration: 2000,
-					});
-				}
-			},
-			[bookDates],
-		);
-
-		const markedDates = useMemo(
-			() =>
-				[...bookDates].reduce((obj, item) => {
-					obj[item] = {
-						selected: true,
-						marked: true,
-						selectedColor: "#FE593D",
-					};
-					return obj;
-				}, {}),
-			[bookDates],
-		);
-
-		return (
-			<ScrollView style={styles.constainer}>
-				<View style={styles.header}>
-					<TouchableOpacity onPress={handlePrev}>
-						<SIcon
-							size={20}
-							color={style.highlight}
-							name="arrow-left"
-						/>
-					</TouchableOpacity>
-					<Text style={styles.headerTitle}>{meridian}</Text>
-					<TouchableOpacity onPress={handleNext}>
-						<SIcon
-							size={20}
-							color={style.highlight}
-							name="arrow-right"
-						/>
-					</TouchableOpacity>
-				</View>
 				<CustomCalendar
+					myCustomCalendar
 					handleDateChange={handleSelectedDates}
 					markers={markedDates}
 				/>
 
-				<ScheduleSelector
-					setSelectedTimeFrame={setTimeFrame}
-					selectedTimeFrame={timeFrame}
-					timeFrameList={tfs}
-				/>
 				<View style={styles.setslotContainer}>
 					<TouchableOpacity
 						onPress={handleSubmit}
@@ -195,10 +206,25 @@ const Meridian = memo(
 						<Text style={styles.setSlotText}>Set Slots</Text>
 					</TouchableOpacity>
 				</View>
-			</ScrollView>
-		);
-	},
-);
+				{slots.length ? (
+					<Text style={{textAlign: "center", padding: 10}}>
+						Avaliable slots
+					</Text>
+				) : null}
+				{slots.length ? (
+					<FlatList
+						contentContainerStyle={styles.setslotContainer}
+						scrollEnabled
+						data={slots}
+						renderItem={({item, index}) =>
+							Slot(item, () => handleDeleteSlot(index))
+						}
+					/>
+				) : null}
+			</Layout>
+		</SafeAreaView>
+	);
+});
 
 export default Timeslot;
 const styles = StyleSheet.create({
@@ -236,7 +262,7 @@ const styles = StyleSheet.create({
 		fontSize: 18,
 		color: style.cardColor,
 	},
-	weekdays: {
+	delsection: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
@@ -258,3 +284,19 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 });
+function Slot(slot: never, onDelete: (id: number) => void): JSX.Element {
+	return (
+		<View style={styles.delsection}>
+			<Text
+				style={[
+					styles.setSlotText,
+					{color: style.primaryColor, padding: 5},
+				]}>
+				{slot}
+			</Text>
+			<TouchableOpacity onPress={onDelete} style={{padding: 10}}>
+				<Icon name="delete" color={"red"} size={22} />
+			</TouchableOpacity>
+		</View>
+	);
+}

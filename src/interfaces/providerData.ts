@@ -51,8 +51,6 @@ export default interface IProviderData {
 	readonly category: string;
 	readonly facility: string;
 	readonly experience: string;
-	readonly doctorSlot: {
-		data: [{time: string; available: boolean}];
-	};
+	readonly doctorSlot: string[];
 	readonly rating: number;
 }

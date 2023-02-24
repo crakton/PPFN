@@ -37,12 +37,7 @@ const ProviderReport = memo(() => {
 	useEffect(() => {
 		(async () => {
 			const res = await axios.get(
-				`https://ppfnhealthapp.com/api/report`,
-				{
-					data: {
-						provider_id: provider_data.id,
-					},
-				},
+				`https://ppfnhealthapp.com/api/report?provider_id=${provider_data.id}`,
 			);
 			dispatch(updateReport(res.data));
 			console.log("reports", res.data, provider_data.id);
@@ -104,12 +99,7 @@ const ClientReport = memo(() => {
 	useEffect(() => {
 		(async () => {
 			const res = await axios.get(
-				`https://ppfnhealthapp.com/api/report`,
-				{
-					data: {
-						benfinciary_id: client_data.id,
-					},
-				},
+				`https://ppfnhealthapp.com/api/report?beneficiary_id=${client_data.id}`,
 			);
 			dispatch(updateReport(res.data));
 			console.log("reports", res.data, client_data.id);
