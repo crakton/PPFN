@@ -35,6 +35,8 @@ local.properties
 *.keystore
 !debug.keystore
 
+launch.json
+
 # node.js
 #
 node_modules/

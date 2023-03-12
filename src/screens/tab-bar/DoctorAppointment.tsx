@@ -1,5 +1,5 @@
-/* eslint-disable no-spaced-func */
-import React, {memo, useEffect, useState} from "react";
+/* eslint-disable react-native/no-inline-styles */
+import React, {memo, useEffect, useState} from 'react';
 import {
 	ImageBackground,
 	SafeAreaView,
@@ -8,17 +8,18 @@ import {
 	Text,
 	TouchableOpacity,
 	View,
-} from "react-native";
-import {RouteProp, useNavigation, useRoute} from "@react-navigation/native";
-import FeIcon from "react-native-vector-icons/Feather";
+} from 'react-native';
+import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import FeIcon from 'react-native-vector-icons/Feather';
+import MIcon from 'react-native-vector-icons/MaterialIcons';
 
-import {HeaderWithBackButton} from "../../components/HeaderWithBackButton";
-import {StarRating} from "../../components/widgets/StarRating";
-import {style} from "../../constants/style";
-import IListProvider from "../../interfaces/listProvider";
-import {HEIGHT} from "../../utils/dim";
-import convertToAge from "../../utils/convertToAge";
-import whichSignedUser from "../../utils/whichSignedUser";
+import {HeaderWithBackButton} from '../../components/HeaderWithBackButton';
+import {StarRating} from '../../components/widgets/StarRating';
+import {style} from '../../constants/style';
+import IListProvider from '../../interfaces/listProvider';
+import {HEIGHT} from '../../utils/dim';
+import convertToAge from '../../utils/convertToAge';
+import whichSignedUser from '../../utils/whichSignedUser';
 
 const DoctorAppointment = memo(() => {
 	const {params} = useRoute<RouteProp<{params: IListProvider}>>();
@@ -35,15 +36,15 @@ const DoctorAppointment = memo(() => {
 		<SafeAreaView>
 			<ScrollView>
 				<ImageBackground
-					imageStyle={{resizeMode: "cover"}}
+					imageStyle={{resizeMode: 'cover'}}
 					style={{height: HEIGHT / 2}}
-					source={require("../../assets/images/fallback.png")}>
+					source={require('../../assets/images/fallback.png')}>
 					<HeaderWithBackButton />
 				</ImageBackground>
 				<View style={styles.nameContainer}>
 					<View
 						style={{
-							flexDirection: "column",
+							flexDirection: 'column',
 						}}>
 						<Text style={styles.fullname}>
 							{params.first_name} {params.last_name}
@@ -63,7 +64,7 @@ const DoctorAppointment = memo(() => {
 					{params.rating >= 1 ? (
 						<View
 							style={{
-								flexDirection: "column",
+								flexDirection: 'column',
 							}}>
 							<StarRating
 								color={style.secondaryColor}
@@ -79,12 +80,28 @@ const DoctorAppointment = memo(() => {
 						*/}
 						</View>
 					) : null}
+					<TouchableOpacity
+						style={{
+							justifyContent: 'center',
+							alignItems: 'center',
+							position: 'absolute',
+							top: 10,
+							right: 10,
+						}}
+						onPress={() => navigate('chat', {...params})}>
+						<MIcon
+							name="chat"
+							size={28}
+							color={style.secondaryColor}
+						/>
+						<Text style={{color: style.secondaryColor}}>chat</Text>
+					</TouchableOpacity>
 				</View>
 				<View
 					style={{
-						flexDirection: "row",
-						justifyContent: "space-between",
-						alignItems: "center",
+						flexDirection: 'row',
+						justifyContent: 'space-between',
+						alignItems: 'center',
 						paddingHorizontal: 10,
 						marginVertical: 10,
 					}}>
@@ -121,10 +138,10 @@ const DoctorAppointment = memo(() => {
 					<Text style={styles.categoryText}>{params.category}</Text>
 				</View>
 				<View style={{paddingHorizontal: 10, marginBottom: 20}}>
-					{whichUser === "client" && (
+					{whichUser === 'client' && (
 						<TouchableOpacity
 							onPress={() =>
-								navigate("bookings", {
+								navigate('bookings', {
 									...params,
 								})
 							}
@@ -146,8 +163,8 @@ const styles = StyleSheet.create({
 		marginTop: 50,
 		padding: 10,
 		borderRadius: 50,
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: 'center',
+		alignItems: 'center',
 		backgroundColor: style.highlight,
 		shadowColor: style.black,
 		shadowOpacity: 0.7,
@@ -156,27 +173,27 @@ const styles = StyleSheet.create({
 	},
 	btnText: {
 		color: style.tertiaryColor,
-		fontFamily: "AltonaSans-Regular",
+		fontFamily: 'AltonaSans-Regular',
 		fontSize: 18,
 	},
 	category: {
-		flexDirection: "row",
+		flexDirection: 'row',
 		paddingHorizontal: 15,
-		alignItems: "center",
+		alignItems: 'center',
 	},
 	categoryLabel: {
 		color: style.primaryColor,
-		fontFamily: "AltonaSans-Regular",
+		fontFamily: 'AltonaSans-Regular',
 		fontSize: 18,
 	},
 	categoryText: {
 		color: style.tertiaryColor,
-		fontFamily: "AltonaSans-Regular",
+		fontFamily: 'AltonaSans-Regular',
 		fontSize: 16,
 	},
 	colorOne: {
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: 'center',
+		alignItems: 'center',
 		backgroundColor: style.secondaryColor,
 		flex: 1,
 		marginHorizontal: 3,
@@ -184,8 +201,8 @@ const styles = StyleSheet.create({
 		padding: 5,
 	},
 	colorTwo: {
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: 'center',
+		alignItems: 'center',
 		backgroundColor: style.primaryColor,
 		flex: 1,
 		marginHorizontal: 3,
@@ -193,33 +210,33 @@ const styles = StyleSheet.create({
 		padding: 5,
 	},
 	nameContainer: {
-		flexDirection: "row",
-		justifyContent: "space-between",
+		flexDirection: 'row',
+		justifyContent: 'space-between',
 		padding: 10,
 	},
 	fullname: {
-		fontFamily: "AltonaSans-Regular",
+		fontFamily: 'AltonaSans-Regular',
 		fontSize: 22,
-		fontWeight: "500",
+		fontWeight: '500',
 		color: style.primaryColor,
-		textTransform: "capitalize",
+		textTransform: 'capitalize',
 	},
 	geoContactEmail: {
-		fontFamily: "AltonaSans-Italic",
+		fontFamily: 'AltonaSans-Italic',
 		fontSize: 18,
 		color: style.titleColor,
 		marginTop: 5,
 	},
 	geoContactLocation: {
 		color: style.black,
-		fontFamily: "AltonaSans-Regular",
+		fontFamily: 'AltonaSans-Regular',
 		fontSize: 16,
 		marginTop: 5,
 	},
 	statsInfo: {
 		color: style.highlight,
-		fontFamily: "AltonaSans-Regular",
+		fontFamily: 'AltonaSans-Regular',
 		fontSize: 18,
-		fontWeight: "500",
+		fontWeight: '500',
 	},
 });

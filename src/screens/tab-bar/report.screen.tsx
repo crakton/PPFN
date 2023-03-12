@@ -1,21 +1,21 @@
-import React, {memo, useEffect, useState} from "react";
-import {FlatList, SafeAreaView, StatusBar, Text, View} from "react-native";
-import ReportsDocListItem from "../../components/ReportsDocListItem";
-import SetFetchType from "../../components/SetFetchType";
-import Layout from "../../layouts/DrawerScreenLayout";
-import {reportFetchTypes, reportFetchTypes2} from "../../constants/staticMenus";
-import UploadReport from "../../components/UploadReport";
-import whichSignedUser from "../../utils/whichSignedUser";
-import {useDispatch, useSelector} from "react-redux";
-import {RootState} from "../../types/redux.type";
-import DefaultText from "../../components/widgets/DefaultText";
-import axios from "axios";
-import ActivityLoader from "../../components/widgets/ActivityLoader";
-import {style} from "../../constants/style";
-import {updateReport} from "../../redux/reports";
+import React, {memo, useEffect, useState} from 'react';
+import {FlatList, SafeAreaView, StatusBar, Text, View} from 'react-native';
+import ReportsDocListItem from '../../components/ReportsDocListItem';
+import SetFetchType from '../../components/SetFetchType';
+import Layout from '../../layouts/DrawerScreenLayout';
+import {reportFetchTypes, reportFetchTypes2} from '../../constants/staticMenus';
+import UploadReport from '../../components/UploadReport';
+import whichSignedUser from '../../utils/whichSignedUser';
+import {useDispatch, useSelector} from 'react-redux';
+import {RootState} from '../../types/redux.type';
+import DefaultText from '../../components/widgets/DefaultText';
+import axios from 'axios';
+import ActivityLoader from '../../components/widgets/ActivityLoader';
+import {style} from '../../constants/style';
+import {updateReport} from '../../redux/reports';
 
 const Report = memo(() => {
-	const [whichUser, setWhichUser] = useState<string>("");
+	const [whichUser, setWhichUser] = useState<string>('');
 
 	useEffect(() => {
 		(async () => {
@@ -26,7 +26,7 @@ const Report = memo(() => {
 	if (!whichUser) {
 		return <ActivityLoader />;
 	}
-	return whichUser === "provider" ? <ProviderReport /> : <ClientReport />;
+	return whichUser === 'provider' ? <ProviderReport /> : <ClientReport />;
 });
 
 const ProviderReport = memo(() => {
@@ -40,26 +40,26 @@ const ProviderReport = memo(() => {
 				`https://ppfnhealthapp.com/api/report?provider_id=${provider_data.id}`,
 			);
 			dispatch(updateReport(res.data));
-			console.log("reports", res.data, provider_data.id);
+			console.log('reports', res.data, provider_data.id);
 		})();
-	}, [dispatch]);
+	}, [dispatch, provider_data.id]);
 	return (
 		<SafeAreaView style={{flex: 1, marginTop: 20}}>
 			<Text
 				style={{
 					color: style.primaryColor,
-					fontFamily: "AltonaSans-Regular",
+					fontFamily: 'AltonaSans-Regular',
 					fontSize: 24,
 					marginHorizontal: 15,
 				}}>{`Hello ${provider_data.first_name}`}</Text>
 			<Text
 				style={{
 					color: style.titleColor,
-					fontFamily: "AltonaSans-Regular",
+					fontFamily: 'AltonaSans-Regular',
 					fontSize: 18,
 					marginHorizontal: 15,
 				}}>
-				Upload and find previous reports here{" "}
+				Upload and find previous reports here{' '}
 			</Text>
 			<View style={{paddingHorizontal: 15}}>
 				<SetFetchType
@@ -68,7 +68,7 @@ const ProviderReport = memo(() => {
 					setFetchType={setFetchType}
 				/>
 			</View>
-			{fetchType === "Sent" ? (
+			{fetchType === 'Sent' ? (
 				reports.length ? (
 					<FlatList
 						showsVerticalScrollIndicator={false}
@@ -82,7 +82,7 @@ const ProviderReport = memo(() => {
 						)}
 					/>
 				) : (
-					<DefaultText text={"You do not have any reports yet."} />
+					<DefaultText text={'You do not have any reports yet.'} />
 				)
 			) : (
 				<UploadReport />
@@ -102,9 +102,9 @@ const ClientReport = memo(() => {
 				`https://ppfnhealthapp.com/api/report?beneficiary_id=${client_data.id}`,
 			);
 			dispatch(updateReport(res.data));
-			console.log("reports", res.data, client_data.id);
+			console.log('reports', res.data, client_data.id);
 		})();
-	}, [dispatch]);
+	}, [dispatch, client_data.id]);
 	return (
 		<Layout
 			title={`Hello ${client_data.first_name}!`}
@@ -116,7 +116,7 @@ const ClientReport = memo(() => {
 					setFetchType={setFetchType}
 				/>
 			</View>
-			{fetchType === "All" ? (
+			{fetchType === 'All' ? (
 				reports.length ? (
 					<FlatList
 						showsVerticalScrollIndicator={false}
@@ -130,10 +130,10 @@ const ClientReport = memo(() => {
 						)}
 					/>
 				) : (
-					<DefaultText text={"You do not have any reports yet."} />
+					<DefaultText text={'You do not have any reports yet.'} />
 				)
 			) : null}
-			{fetchType === "New" ? (
+			{fetchType === 'New' ? (
 				reports.length ? (
 					<FlatList
 						showsVerticalScrollIndicator={false}
@@ -147,7 +147,7 @@ const ClientReport = memo(() => {
 						)}
 					/>
 				) : (
-					<DefaultText text={"You do not have any reports yet."} />
+					<DefaultText text={'You do not have any reports yet.'} />
 				)
 			) : null}
 		</Layout>

@@ -1,5 +1,6 @@
 /* eslint-disable no-spaced-func */
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import database from "@react-native-firebase/database";
 import {useNavigation} from "@react-navigation/native";
 import React, {useCallback, useEffect, useState} from "react";
 import {
@@ -21,6 +22,7 @@ import {INavigateProps} from "../interfaces";
 import IClientData from "../interfaces/clientData";
 import IProviderData from "../interfaces/providerData";
 import {isSigned} from "../redux/auth/isSigned";
+import firebaseServices from "../services/firebase.service";
 import {RootState} from "../types/redux.type";
 import whichSignedUser from "../utils/whichSignedUser";
 
@@ -39,6 +41,14 @@ export const DrawerHeader = () => {
 	}>();
 	const handleLogout = useCallback(async () => {
 		try {
+			database()
+				.ref(`Users/@${whichUser?.data.last_name}${whichUser?.data.id}`)
+				.update({online: false})
+				.then(() => console.log("user offline!"));
+			firebaseServices.signOut();
+			// firebaseServices.setOnlineStatus(
+			// 	`@${whichUser?.data.last_name}${whichUser?.data.id}`,
+			// );
 			await AsyncStorage.setItem("is_signed", "no");
 			const signedVal = await AsyncStorage.getItem("is_signed");
 			dispatch(isSigned(signedVal));
@@ -54,7 +64,7 @@ export const DrawerHeader = () => {
 		} catch (error: any) {
 			console.log(error);
 		}
-	}, [dispatch, reset]);
+	}, [dispatch, reset, whichUser?.data, whichSignedUser]);
 	useEffect(() => {
 		(async () => {
 			try {

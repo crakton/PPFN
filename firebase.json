@@ -1,5 +1,6 @@
 {
     "react-native": {
+      "database_persistence_enabled": true,
       "messaging_ios_foreground_presentation_options": ["badge", "sound", "list", "banner"],
        "messaging_android_notification_channel_id": "high-priority"
     }

@@ -6,7 +6,7 @@ export const style = {
 	secondaryColor: "#5E96CF",
 	tertiaryColor: "#5068AE",
 	highlight: "#cce3f4",
-	titleColor: "#c7c8c8",
+	titleColor: "#c4c5c5",
 };
 
 export const styles = StyleSheet.create({

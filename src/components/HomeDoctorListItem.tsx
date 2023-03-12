@@ -1,29 +1,41 @@
-import {View, Text, Image, TouchableOpacity, StyleSheet} from "react-native";
-import React from "react";
-import AntIcon from "react-native-vector-icons/AntDesign";
-import {INavigateProps} from "../interfaces";
-import {style} from "../constants/style";
-import {Rating} from "./widgets/Rating";
-import {useNavigation} from "@react-navigation/native";
-import IListProvider from "../interfaces/listProvider";
+/* eslint-disable react-native/no-inline-styles */
+import {View, Text, Image, TouchableOpacity, StyleSheet} from 'react-native';
+import React, {useLayoutEffect, useState} from 'react';
+import AntIcon from 'react-native-vector-icons/AntDesign';
+import {INavigateProps} from '../interfaces';
+import {style} from '../constants/style';
+import {Rating} from './widgets/Rating';
+import {useNavigation} from '@react-navigation/native';
+import IListProvider from '../interfaces/listProvider';
+import firebaseServices from '../services/firebase.service';
+import {PresenceStatus} from './widgets/PresenceStatus';
 
 export default function HomeDoctorListItem({...data}: IListProvider) {
 	const {navigate}: {navigate: INavigateProps} = useNavigation();
+	const [status, setStatus] = useState<boolean | null>();
+	useLayoutEffect(() => {
+		firebaseServices.getOnlineStatus(
+			`@${data.last_name.trim()}${data.id}`,
+			val => {
+				setStatus(val);
+			},
+		);
+	}, [data.id, data.last_name]);
 	return (
 		<View style={styles.container}>
 			<View style={styles.imgContainer}>
 				<Image
 					style={styles.img}
-					source={require("../assets/images/logo.png")}
+					source={require('../assets/images/logo.png')}
 				/>
 			</View>
 			<View
-				style={{flex: 1, marginVertical: 20, flexDirection: "column"}}>
+				style={{flex: 1, marginVertical: 20, flexDirection: 'column'}}>
 				<Text
 					style={{
 						fontSize: 18,
-						fontWeight: "bold",
-						textTransform: "capitalize",
+						fontWeight: 'bold',
+						textTransform: 'capitalize',
 						color: style.primaryColor,
 					}}>
 					{data.first_name} {data.last_name}
@@ -32,41 +44,36 @@ export default function HomeDoctorListItem({...data}: IListProvider) {
 					<Text
 						style={{
 							fontSize: 12,
-							fontWeight: "500",
+							fontWeight: '500',
 							color: style.titleColor,
 						}}>
 						{data.experience} years experience
 					</Text>
 				) : null}
-				<View style={{flexDirection: "row", marginVertical: 5}}>
+				<View style={{flexDirection: 'row', marginVertical: 5}}>
 					<Text style={styles.clinic}>{data.facility}</Text>
 				</View>
-				<View style={{width: "60%", marginTop: 5}}>
+				<View style={{width: '60%', marginTop: 5}}>
 					{data.rating ? <Rating rate={data.rating} max={5} /> : null}
 				</View>
 			</View>
-			{/* <View style={{justifyContent: 'center', paddingHorizontal: 5}}>
-				{data.status ? (
-					<View
-						style={{
-							padding: 5,
-							borderRadius: 99,
-							backgroundColor: 'limegreen',
-						}}
-					/>
+			<View
+				style={{
+					justifyContent: 'center',
+					alignItems: 'center',
+					paddingHorizontal: 5,
+				}}>
+				{status ? (
+					<Text style={{color: 'limegreen', fontSize: 10}}>
+						online
+					</Text>
 				) : (
-					<View
-						style={{
-							padding: 5,
-							borderRadius: 99,
-							backgroundColor: '#bbb',
-						}}
-					/>
+					<PresenceStatus status={status} />
 				)}
-			</View> */}
-			<View style={{flexDirection: "column"}}>
+			</View>
+			<View style={{flexDirection: 'column'}}>
 				<TouchableOpacity
-					onPress={() => navigate("doctor_appointment", data)}
+					onPress={() => navigate('doctor_appointment', data)}
 					style={styles.secondaryBtn}>
 					<AntIcon
 						color={style.highlight}
@@ -74,16 +81,6 @@ export default function HomeDoctorListItem({...data}: IListProvider) {
 						name="calendar"
 					/>
 				</TouchableOpacity>
-				{/* <TouchableOpacity onPress={() => initCall(false, () => {
-					navigate('call', {
-						isVideoCall: false,
-						callee: data.phone_number,
-						isIncomingCall: false,
-					});
-
-				})} style={styles.primaryBtn}>
-					<AntIcon color={style.highlight} size={30} name="phone" />
-				</TouchableOpacity> */}
 			</View>
 		</View>
 	);
@@ -91,18 +88,18 @@ export default function HomeDoctorListItem({...data}: IListProvider) {
 
 const styles = StyleSheet.create({
 	container: {
-		flexDirection: "row",
-		alignItems: "center",
+		flexDirection: 'row',
+		alignItems: 'center',
 		backgroundColor: style.cardColor,
 		borderRadius: 15,
-		overflow: "hidden",
+		overflow: 'hidden',
 		elevation: 3,
 		marginVertical: 5,
 	},
 	imgContainer: {
 		height: 55,
 		width: 55,
-		overflow: "hidden",
+		overflow: 'hidden',
 		borderRadius: 100,
 		marginVertical: 15,
 		marginHorizontal: 10,
@@ -113,24 +110,24 @@ const styles = StyleSheet.create({
 	},
 	secondaryBtn: {
 		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: 'center',
+		alignItems: 'center',
 		backgroundColor: style.secondaryColor,
 		paddingHorizontal: 15,
 	},
 	primaryBtn: {
 		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: 'center',
+		alignItems: 'center',
 		backgroundColor: style.tertiaryColor,
 		paddingHorizontal: 15,
 	},
 	clinic: {
 		fontSize: 12,
-		fontWeight: "bold",
+		fontWeight: 'bold',
 		color: style.secondaryColor,
 		backgroundColor: style.highlight,
-		flexDirection: "row",
+		flexDirection: 'row',
 		padding: 7,
 		borderRadius: 5,
 	},

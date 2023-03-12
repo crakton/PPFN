@@ -144,6 +144,10 @@ export default function OtherFormDetails() {
 					const user_data: IClientData = JSON.parse(
 						await AsyncStorage.getItem("user_data"),
 					);
+					await firebaseServices.createRealTimeUser(
+						`@${user_data.last_name}${user_data.id}`,
+						user_data,
+					);
 
 					dispatch(getClientData(user_data));
 					KommunicateChat.loginUser(

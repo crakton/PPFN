@@ -1,8 +1,8 @@
-import { useNavigation } from '@react-navigation/native';
-import React from 'react';
-import { StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import React, {ReactNode} from 'react';
+import {StyleSheet, Text, TouchableWithoutFeedback, View} from 'react-native';
 import IIcon from 'react-native-vector-icons/Ionicons';
-import { style } from '../constants/style';
+import {style} from '../constants/style';
 
 export function HeaderWithBackButton({
 	goback,
@@ -10,19 +10,27 @@ export function HeaderWithBackButton({
 	hasOptions,
 }: {
 	goback?: boolean;
-	headerTitle?: string | undefined;
+	headerTitle?: string | ReactNode;
 	hasOptions?: boolean;
 }) {
-	const { goBack } = useNavigation();
+	const {goBack} = useNavigation();
 	return (
 		<View style={styles.header}>
-			{goback ?
+			{goback ? (
 				<TouchableWithoutFeedback onPress={() => goBack()}>
-					<IIcon name="arrow-back-sharp" color={style.primaryColor} size={24} />
-				</TouchableWithoutFeedback> : null}
-			{headerTitle ? (
-				<Text style={styles.headerTitle}>{headerTitle}</Text>
+					<IIcon
+						name="arrow-back-sharp"
+						color={style.primaryColor}
+						size={24}
+					/>
+				</TouchableWithoutFeedback>
 			) : null}
+			{headerTitle && typeof headerTitle === 'string' ? (
+				<Text style={styles.headerTitle}>{headerTitle}</Text>
+			) : (
+				headerTitle
+			)}
+
 			<View>
 				{hasOptions ? (
 					<TouchableWithoutFeedback>
@@ -42,7 +50,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 15,
 		paddingHorizontal: 20,
 		marginBottom: 10,
-		marginTop: 20,
+		// marginTop: 20,
 	},
 	headerTitle: {
 		color: style.tertiaryColor,

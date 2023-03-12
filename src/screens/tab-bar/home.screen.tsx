@@ -1,41 +1,41 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, {
 	memo,
 	useEffect,
 	useLayoutEffect,
 	useMemo,
 	useState,
-} from "react";
-import {useSelector} from "react-redux";
-import {View, FlatList} from "react-native";
-import {Toast} from "react-native-awesome";	
+} from 'react';
+import {useSelector} from 'react-redux';
+import {View, FlatList} from 'react-native';
+import {Toast} from 'react-native-awesome';
 //navigators
 
 //types, interfaces and utils
-import IClientData from "../../interfaces/clientData";
-import IProviderData from "../../interfaces/providerData";
-import IListProvider from "../../interfaces/listProvider";
-import whichSignedUser from "../../utils/whichSignedUser";
-import providersNearYou from "../../utils/providersNearYou";
-import providerByPopularity from "../../utils/providersByPopularity";
-import {RootState} from "../../types/redux.type";
-import {homeFetchTypes} from "../../constants/staticMenus";
+import IClientData from '../../interfaces/clientData';
+import IProviderData from '../../interfaces/providerData';
+import IListProvider from '../../interfaces/listProvider';
+import whichSignedUser from '../../utils/whichSignedUser';
+import providersNearYou from '../../utils/providersNearYou';
+import providerByPopularity from '../../utils/providersByPopularity';
+import {RootState} from '../../types/redux.type';
+import {homeFetchTypes} from '../../constants/staticMenus';
 
 //screens
-import DoctorAppointment from "./DoctorAppointment";
+import DoctorAppointment from './DoctorAppointment';
 
 //components
-import ActivityLoader from "../../components/widgets/ActivityLoader";
-import DefaultText from "../../components/widgets/DefaultText";
-import HomeDoctorListItem from "../../components/HomeDoctorListItem";
-import SearchBar from "../../components/SearchBar";
-import SetFetchType from "../../components/SetFetchType";
-import Layout from "../../layouts/DrawerScreenLayout";
-import ProviderHome from "./ProviderHome";
-import {Stack} from "../../navigations/stack.navigation";
-import firebaseServices from "../../services/firebase.service";
+import ActivityLoader from '../../components/widgets/ActivityLoader';
+import DefaultText from '../../components/widgets/DefaultText';
+import HomeDoctorListItem from '../../components/HomeDoctorListItem';
+import SearchBar from '../../components/SearchBar';
+import SetFetchType from '../../components/SetFetchType';
+import Layout from '../../layouts/DrawerScreenLayout';
+import ProviderHome from './ProviderHome';
+import {Stack} from '../../navigations/stack.navigation';
+import firebaseServices from '../../services/firebase.service';
 
 const Home = memo(() => {
-	const calls = new Map();
 	return (
 		<Stack.Navigator screenOptions={{headerShown: false}}>
 			<Stack.Screen name="home_main" component={HomeLayout} />
@@ -51,8 +51,8 @@ const RenderListProviders = ({item}: {item: IListProvider}) => (
 	<HomeDoctorListItem {...item} />
 );
 function HomeLayout(): JSX.Element {
-	const [searchQuery, setSearchQuery] = useState("");
-	const [fetchType, setFetchType] = useState("All");
+	const [searchQuery, setSearchQuery] = useState('');
+	const [fetchType, setFetchType] = useState('All');
 	const handleChangeSearchQuery = (txt: string) => setSearchQuery(txt);
 	const providers = useSelector((state: RootState) => state.provider);
 	const {client_data, provider_data} = useSelector(
@@ -62,72 +62,72 @@ function HomeLayout(): JSX.Element {
 		data: IClientData | IProviderData;
 		user: string;
 	}>({
-		user: "",
+		user: '',
 		data: {
-			address: "",
-			blood_group: "",
-			category: "",
-			city: "",
-			date_of_birth: "",
-			doctorSlot: {data: [{available: false, time: ""}]},
-			education: "",
-			email: "",
-			experience: "",
-			facility: "",
-			first_name: "",
-			gender: "",
-			genotype: "",
-			geo_location: "",
-			geolocation: "",
-			hash: "",
-			height: "",
-			id: "",
-			image: "",
-			insurar_name: "",
-			last_login: "",
-			last_name: "",
-			marital_status: "",
-			nationalID: "",
-			next_of_kin: "",
-			phone_number: "",
-			photo: "",
-			photo_error: "",
-			photo_name: "",
-			photo_path: "",
-			photo_size: "",
-			photo_type: "",
+			address: '',
+			blood_group: '',
+			category: '',
+			city: '',
+			date_of_birth: '',
+			doctorSlot: {data: [{available: false, time: ''}]},
+			education: '',
+			email: '',
+			experience: '',
+			facility: '',
+			first_name: '',
+			gender: '',
+			genotype: '',
+			geo_location: '',
+			geolocation: '',
+			hash: '',
+			height: '',
+			id: '',
+			image: '',
+			insurar_name: '',
+			last_login: '',
+			last_name: '',
+			marital_status: '',
+			nationalID: '',
+			next_of_kin: '',
+			phone_number: '',
+			photo: '',
+			photo_error: '',
+			photo_name: '',
+			photo_path: '',
+			photo_size: '',
+			photo_type: '',
 			rating: 0,
-			regdate: "",
-			relationship_with_nok: "",
-			religion: "",
-			status: "",
-			system_user: "",
-			state: "",
-			t1: "",
-			t2: "",
-			t3: "",
-			t4: "",
-			t5: "",
-			t6: "",
-			t7: "",
-			t8: "",
-			t9: "",
-			t10: "",
-			t11: "",
-			t12: "",
-			t13: "",
-			t14: "",
-			t15: "",
-			t16: "",
-			t17: "",
-			t18: "",
-			t19: "",
-			t20: "",
-			t21: "",
-			t22: "",
-			t23: "",
-			title: "",
-			weight: "",
+			regdate: '',
+			relationship_with_nok: '',
+			religion: '',
+			status: '',
+			system_user: '',
+			state: '',
+			t1: '',
+			t2: '',
+			t3: '',
+			t4: '',
+			t5: '',
+			t6: '',
+			t7: '',
+			t8: '',
+			t9: '',
+			t10: '',
+			t11: '',
+			t12: '',
+			t13: '',
+			t14: '',
+			t15: '',
+			t16: '',
+			t17: '',
+			t18: '',
+			t19: '',
+			t20: '',
+			t21: '',
+			t22: '',
+			t23: '',
+			title: '',
+			weight: '',
 		},
 	});
 
@@ -137,13 +137,13 @@ function HomeLayout(): JSX.Element {
 				const user = await whichSignedUser();
 				setWhichUser({
 					user,
-					data: user === "client" ? client_data : provider_data,
+					data: user === 'client' ? client_data : provider_data,
 				});
 			} catch (error: any) {
-				if (error === "Network Error") {
+				if (error === 'Network Error') {
 					Toast.showToast({
 						message:
-							"There is a problem with your network connection!",
+							'There is a problem with your network connection!',
 					});
 				}
 				console.log(error);
@@ -156,6 +156,14 @@ function HomeLayout(): JSX.Element {
 		return unsubscribe;
 	}, []);
 
+	useEffect(() => {
+		if (whichUser.data.id) {
+			firebaseServices.setOnlineStatus(
+				`@${whichUser.data.last_name}${whichUser.data.id}`,
+			);
+		}
+	}, [whichUser.data]);
+
 	const providersNY = useMemo(
 		() => providersNearYou(providers, whichUser?.data.state),
 		[providers, whichUser?.data.state],
@@ -167,7 +175,7 @@ function HomeLayout(): JSX.Element {
 	if (whichUser === undefined) {
 		return <ActivityLoader />;
 	}
-	return whichUser.user === "provider" ? (
+	return whichUser.user === 'provider' ? (
 		<ProviderHome />
 	) : (
 		<Layout
@@ -185,7 +193,7 @@ function HomeLayout(): JSX.Element {
 					setFetchType={setFetchType}
 				/>
 			</View>
-			{fetchType === "All" && providers[0].first_name ? (
+			{fetchType === 'All' && providers[0].first_name ? (
 				<FlatList
 					refreshing
 					contentContainerStyle={{paddingHorizontal: 15}}
@@ -198,7 +206,7 @@ function HomeLayout(): JSX.Element {
 			) : (
 				<></>
 			)}
-			{fetchType === "Near You" ? (
+			{fetchType === 'Near You' ? (
 				providersNY.length ? (
 					<FlatList
 						contentContainerStyle={{paddingHorizontal: 15}}
@@ -212,7 +220,7 @@ function HomeLayout(): JSX.Element {
 					<DefaultText text="No Provider closer to you." />
 				)
 			) : null}
-			{fetchType === "Popular" ? (
+			{fetchType === 'Popular' ? (
 				providersByPopularity.length ? (
 					<FlatList
 						contentContainerStyle={{paddingHorizontal: 15}}

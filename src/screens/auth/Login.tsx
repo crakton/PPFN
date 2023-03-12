@@ -227,6 +227,12 @@ const Login = memo(() => {
 										await firebaseServices.getFCMToken(),
 								},
 							);
+
+							await firebaseServices.createRealTimeUser(
+								`@${provider_data.last_name}${provider_data.id}`,
+								provider_data,
+							);
+
 							setTimeout(() => {
 								dispatch(getProviderData(provider_data));
 								dispatch(isSigned(signed));

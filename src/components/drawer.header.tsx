@@ -1,6 +1,8 @@
-import React, {useCallback, useEffect, useState} from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {useNavigation} from "@react-navigation/native";
+/* eslint-disable react-native/no-inline-styles */
+import React, {useCallback, useEffect, useState} from 'react';
+import database from '@react-native-firebase/database';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useNavigation} from '@react-navigation/native';
 import {
 	Image,
 	ImageBackground,
@@ -9,21 +11,21 @@ import {
 	TouchableOpacity,
 	TouchableWithoutFeedback,
 	View,
-} from "react-native";
-import FaIcon from "react-native-vector-icons/FontAwesome";
-import FIcon from "react-native-vector-icons/Foundation";
-import MCIcon from "react-native-vector-icons/MaterialCommunityIcons";
-import {useDispatch, useSelector} from "react-redux";
-import storage from "@react-native-firebase/storage";
+} from 'react-native';
+import FaIcon from 'react-native-vector-icons/FontAwesome';
+import FIcon from 'react-native-vector-icons/Foundation';
+import MCIcon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useDispatch, useSelector} from 'react-redux';
+import storage from '@react-native-firebase/storage';
 
-import {style, styles} from "../constants/style";
-import {INavigateProps} from "../interfaces";
-import IClientData from "../interfaces/clientData";
-import IProviderData from "../interfaces/providerData";
-import {isSigned} from "../redux/auth/isSigned";
-import {RootState} from "../types/redux.type";
-import whichSignedUser from "../utils/whichSignedUser";
-import firebaseServices from "../services/firebase.service";
+import {style, styles} from '../constants/style';
+import {INavigateProps} from '../interfaces';
+import IClientData from '../interfaces/clientData';
+import IProviderData from '../interfaces/providerData';
+import {isSigned} from '../redux/auth/isSigned';
+import {RootState} from '../types/redux.type';
+import whichSignedUser from '../utils/whichSignedUser';
+import firebaseServices from '../services/firebase.service';
 
 export const DrawerHeader = () => {
 	const {provider_data, client_data} = useSelector(
@@ -42,35 +44,39 @@ export const DrawerHeader = () => {
 
 	const handleLogout = useCallback(async () => {
 		try {
-			await AsyncStorage.setItem("is_signed", "no");
-			const signedVal = await AsyncStorage.getItem("is_signed");
+			await AsyncStorage.setItem('is_signed', 'no');
+			const signedVal = await AsyncStorage.getItem('is_signed');
 			dispatch(isSigned(signedVal));
 			await AsyncStorage.multiRemove([
-				"is_client",
-				"is_provider",
-				"list_provider",
-				"previous_client_appointment",
-				"upcoming_client_appointment",
-				"user_data",
-				"provider_data",
+				'is_client',
+				'is_provider',
+				'list_provider',
+				'previous_client_appointment',
+				'upcoming_client_appointment',
+				'user_data',
+				'provider_data',
 			]);
+			database()
+				.ref(`Users/@${whichUser?.data.last_name}${whichUser?.data.id}`)
+				.update({online: false});
 			setTimeout(() => {
-				reset({index: 0, routes: [{name: "login"}]}), 100;
 				firebaseServices.signOut();
+				// eslint-disable-next-line no-sequences
+				reset({index: 0, routes: [{name: 'login'}]}), 100;
 			});
 		} catch (error) {
 			console.log(error);
 		}
-	}, [dispatch, reset]);
+	}, [dispatch, reset, whichUser?.data]);
 	useEffect(() => {
 		(async () => {
 			try {
 				const user = await whichSignedUser();
-				if (user === "client") {
+				if (user === 'client') {
 					setWhichUser({data: client_data, user});
 					const img = await storage()
 						.ref(
-							"profile_images/@" +
+							'profile_images/@' +
 								client_data.id +
 								client_data.first_name,
 						)
@@ -80,7 +86,7 @@ export const DrawerHeader = () => {
 					setWhichUser({data: provider_data, user});
 					const img = await storage()
 						.ref(
-							"profile_images/@" +
+							'profile_images/@' +
 								provider_data.id +
 								provider_data.first_name,
 						)
@@ -96,9 +102,9 @@ export const DrawerHeader = () => {
 	return (
 		<SafeAreaView>
 			<ImageBackground
-				imageStyle={{resizeMode: "stretch"}}
+				imageStyle={{resizeMode: 'stretch'}}
 				source={{
-					uri: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MzJ8fGhlYWx0aGNhcmV8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60",
+					uri: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MzJ8fGhlYWx0aGNhcmV8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60',
 				}}>
 				<View style={[styles.drawerHeaderAvatarContainer]}>
 					<Image
@@ -106,11 +112,11 @@ export const DrawerHeader = () => {
 						source={
 							image
 								? {uri: image}
-								: require("../assets/images/fallback.png")
+								: require('../assets/images/fallback.png')
 						}
 					/>
 					<TouchableOpacity
-						onPress={() => navigate("edit_profile")}
+						onPress={() => navigate('edit_profile')}
 						style={styles.drawerHeaderEditIcon}>
 						<FaIcon name="edit" color={style.highlight} size={12} />
 					</TouchableOpacity>

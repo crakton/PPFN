@@ -1,17 +1,17 @@
-import auth from "@react-native-firebase/auth";
-import database from "@react-native-firebase/database";
-import firestore from "@react-native-firebase/firestore";
-import messaging from "@react-native-firebase/messaging";
-import notifee from "@notifee/react-native";
+import auth from '@react-native-firebase/auth';
+import database from '@react-native-firebase/database';
+import firestore from '@react-native-firebase/firestore';
+import messaging from '@react-native-firebase/messaging';
+import notifee from '@notifee/react-native';
 
-import notifeeServices from "./notifee.service";
-import {store} from "../redux/store";
+import notifeeServices from './notifee.service';
+import {store} from '../redux/store';
 import {
 	setAppointmentNotification,
 	setCallNotification,
 	setReportNotification,
-} from "../redux/notifications";
-import whichSignedUser from "../utils/whichSignedUser";
+} from '../redux/notifications';
+import whichSignedUser from '../utils/whichSignedUser';
 
 export class FirebaseServices {
 	async signupEmailPassword(email: string, password: string) {
@@ -32,7 +32,7 @@ export class FirebaseServices {
 	async getUserDoc(user: string) {
 		try {
 			return (
-				await firestore().collection("Users").doc(user).get()
+				await firestore().collection('Users').doc(user).get()
 			).data();
 		} catch (error) {
 			console.log(error);
@@ -42,7 +42,7 @@ export class FirebaseServices {
 	async addUserDoc(user: string, payload: {}) {
 		try {
 			await firestore()
-				.collection("Users")
+				.collection('Users')
 				.doc(user)
 				.set({
 					...payload,
@@ -55,7 +55,7 @@ export class FirebaseServices {
 	async updateUserDoc(user: string, payload: {}) {
 		try {
 			await firestore()
-				.collection("Users")
+				.collection('Users')
 				.doc(user)
 				.update({
 					...payload,
@@ -67,7 +67,7 @@ export class FirebaseServices {
 	}
 	async deleteUserDoc(user: string) {
 		try {
-			await firestore().collection("Users").doc(user).delete();
+			await firestore().collection('Users').doc(user).delete();
 		} catch (error) {
 			console.log(error);
 		}
@@ -82,7 +82,9 @@ export class FirebaseServices {
 	signOut() {
 		auth()
 			.signOut()
-			.then(() => console.log("User signed out!"));
+			.then(async () => {
+				console.log('User signed out!');
+			});
 	}
 
 	async requestFirebaseUserPermission() {
@@ -93,7 +95,7 @@ export class FirebaseServices {
 				authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
 			if (enabled) {
-				console.log("Authorization status:", authStatus);
+				console.log('Authorization status:', authStatus);
 			}
 		} catch (error) {
 			console.log(error);
@@ -103,7 +105,7 @@ export class FirebaseServices {
 	foregroundFCM() {
 		try {
 			messaging().onMessage(async remoteMessage => {
-				if (remoteMessage.data?.type === "CALL") {
+				if (remoteMessage.data?.type === 'CALL') {
 					// store.dispatch(
 					// 	setCallNotification({
 					// 		body: remoteMessage.notification?.body,
@@ -119,7 +121,7 @@ export class FirebaseServices {
 						remoteMessage.data,
 					);
 				}
-				if (remoteMessage.data?.type === "APPOINTMENT") {
+				if (remoteMessage.data?.type === 'APPOINTMENT') {
 					store.dispatch(
 						setAppointmentNotification({
 							body: remoteMessage.notification?.body,
@@ -132,7 +134,7 @@ export class FirebaseServices {
 						remoteMessage.data,
 					);
 				}
-				if (remoteMessage.data?.type === "REPORT") {
+				if (remoteMessage.data?.type === 'REPORT') {
 					store.dispatch(
 						setReportNotification({
 							body: remoteMessage.notification?.body,
@@ -156,7 +158,7 @@ export class FirebaseServices {
 			// const user = await whichSignedUser();
 			// const userdata = "client" ? client_data : provider_data;
 			messaging().setBackgroundMessageHandler(async remoteMessage => {
-				if (remoteMessage.data?.type === "CALL") {
+				if (remoteMessage.data?.type === 'CALL') {
 					store.dispatch(
 						setCallNotification({
 							body: remoteMessage.notification?.body,
@@ -174,7 +176,7 @@ export class FirebaseServices {
 						remoteMessage.data,
 					);
 				}
-				if (remoteMessage.data?.type === "APPOINTMENT") {
+				if (remoteMessage.data?.type === 'APPOINTMENT') {
 					store.dispatch(
 						setAppointmentNotification({
 							body: remoteMessage.notification?.body,
@@ -188,7 +190,7 @@ export class FirebaseServices {
 						remoteMessage.data,
 					);
 				}
-				if (remoteMessage.data?.type === "REPORT") {
+				if (remoteMessage.data?.type === 'REPORT') {
 					store.dispatch(
 						setReportNotification({
 							body: remoteMessage.notification?.body,
@@ -210,7 +212,7 @@ export class FirebaseServices {
 	onOpenNotification() {
 		messaging().onNotificationOpenedApp(async remoteMessage => {
 			try {
-				if (remoteMessage.data?.type === "CALL") {
+				if (remoteMessage.data?.type === 'CALL') {
 					store.dispatch(
 						setCallNotification({
 							body: remoteMessage.notification?.body,
@@ -231,7 +233,7 @@ export class FirebaseServices {
 				console.log(error);
 			}
 			try {
-				if (remoteMessage.data?.type === "APPOINTMENT") {
+				if (remoteMessage.data?.type === 'APPOINTMENT') {
 					store.dispatch(
 						setAppointmentNotification({
 							body: remoteMessage.notification?.body,
@@ -249,7 +251,7 @@ export class FirebaseServices {
 				console.log(error);
 			}
 			try {
-				if (remoteMessage.data?.type === "REPORT") {
+				if (remoteMessage.data?.type === 'REPORT') {
 					store.dispatch(
 						setReportNotification({
 							body: remoteMessage.notification?.body,
@@ -273,7 +275,7 @@ export class FirebaseServices {
 			.getInitialNotification()
 			.then(async remoteMessage => {
 				try {
-					if (remoteMessage?.data?.type === "CALL") {
+					if (remoteMessage?.data?.type === 'CALL') {
 						store.dispatch(
 							setCallNotification({
 								body: remoteMessage.notification?.body,
@@ -294,7 +296,7 @@ export class FirebaseServices {
 					console.log(error);
 				}
 				try {
-					if (remoteMessage?.data?.type === "APPOINTMENT") {
+					if (remoteMessage?.data?.type === 'APPOINTMENT') {
 						store.dispatch(
 							setAppointmentNotification({
 								body: remoteMessage.notification?.body,
@@ -312,7 +314,7 @@ export class FirebaseServices {
 					console.log(error);
 				}
 				try {
-					if (remoteMessage?.data?.type === "REPORT") {
+					if (remoteMessage?.data?.type === 'REPORT') {
 						store.dispatch(
 							setReportNotification({
 								body: remoteMessage.notification?.body,
@@ -348,7 +350,7 @@ export class FirebaseServices {
 
 				//update token to firestore
 				this.updateUserDoc(
-					user === "client"
+					user === 'client'
 						? `@${client_data.last_name}`
 						: `@${provider_data.last_name}`,
 					{fcm_token: token},
@@ -358,8 +360,69 @@ export class FirebaseServices {
 			console.log(error);
 		}
 	}
-	userRef(uid: string) {
-		return database().ref("Users/".concat(uid));
+
+	setOnlineStatus(uid: string) {
+		const unsubscribe = auth().onAuthStateChanged(user => {
+			if (user) {
+				const userRef = database().ref(`Users/${uid}`);
+				userRef.update({online: true});
+
+				// Update the online status to false when the user disconnects.
+				userRef.onDisconnect().update({online: false});
+			}
+		});
+
+		unsubscribe();
+	}
+
+	async getOnlineStatus(uid: string, cb: (arg: any) => void) {
+		try {
+			const ref = await database()
+				.ref(`Users/${uid}`)
+				.limitToFirst(1)
+				.once('value');
+			const doesExit = ref.exists();
+			if (!doesExit) {
+				cb(null);
+			}
+			// 	// Display the online status of the user.
+
+			database()
+				.ref(`Users/${uid}/online`)
+				.on('value', snapshot => {
+					const status = snapshot.val();
+					cb(status);
+				});
+		} catch (error) {
+			console.log(error);
+		}
+	}
+	// getOnlineStatus(uid: string, cb: (arg1?: any) => void) {
+	// 	const ref = database().ref(`Users/${uid}`);
+	// 	const nullRef = ref.toString().split("/").slice(0, 1).join("");
+	// 	console.log(nullRef);
+
+	// 	if (nullRef === "null") {
+	// 		return false;
+	// 	} else {
+	// 		database()
+	// 			.ref(`Users/${uid}/online`)
+	// 			.on("value", snapshot => {
+	// 				cb(snapshot.val());
+	// 			});
+	// 	}
+	// 	// Display the online status of the user.
+
+	// 	cb();
+	// }
+
+	async createRealTimeUser(uid: string, payload: {}) {
+		try {
+			const userRef = database().ref(`Users/${uid}`);
+			userRef.set(payload);
+		} catch (error) {
+			console.log(error);
+		}
 	}
 }
 const firebaseServices = new FirebaseServices();

@@ -1,8 +1,8 @@
-import {Picker} from "@react-native-community/picker";
-import {ItemValue} from "@react-native-community/picker/typings/Picker";
-import {useNavigation} from "@react-navigation/native";
-import axios from "axios";
-import React, {memo, useCallback, useEffect, useState} from "react";
+import {Picker} from '@react-native-community/picker';
+import {ItemValue} from '@react-native-community/picker/typings/Picker';
+import {useNavigation} from '@react-navigation/native';
+import axios from 'axios';
+import React, {memo, useCallback, useEffect, useState} from 'react';
 import {
 	Alert,
 	SafeAreaView,
@@ -10,36 +10,35 @@ import {
 	Text,
 	TouchableOpacity,
 	View,
-} from "react-native";
-import {Toast} from "react-native-awesome";
+} from 'react-native';
+import {Toast} from 'react-native-awesome';
 import {
 	DocumentPickerResponse,
 	isCancel,
 	pickSingle,
 	types,
-} from "react-native-document-picker";
-import {TouchableWithoutFeedback} from "react-native-gesture-handler";
-import {launchImageLibrary} from "react-native-image-picker";
-import AntIcon from "react-native-vector-icons/AntDesign";
-import {useSelector} from "react-redux";
-import sendFcm from "../apis/send-fcm";
-import {services} from "../constants/services";
+} from 'react-native-document-picker';
+import {TouchableWithoutFeedback} from 'react-native-gesture-handler';
+// import {launchImageLibrary} from "react-native-image-picker";
+import AntIcon from 'react-native-vector-icons/AntDesign';
+import {useSelector} from 'react-redux';
+import sendFcm from '../apis/send-fcm';
+// import {services} from "../constants/services";
 
-import {style} from "../constants/style";
-import {INavigateProps} from "../interfaces";
-import IClientData from "../interfaces/clientData";
-import IListAppointment from "../interfaces/listAppointment";
-import firebaseServices from "../services/firebase.service";
-import {RootState} from "../types/redux.type";
-import {WIDTH} from "../utils/dim";
-import {Dropdown} from "./Dropdown";
+import {style} from '../constants/style';
+import {INavigateProps} from '../interfaces';
+import IClientData from '../interfaces/clientData';
+import IListAppointment from '../interfaces/listAppointment';
+import firebaseServices from '../services/firebase.service';
+import {RootState} from '../types/redux.type';
+import {WIDTH} from '../utils/dim';
 
 const UploadReport = () => {
 	const {provider_data} = useSelector((state: RootState) => state.userData);
 	const [uploadFile, setUploadFile] =
 		React.useState<DocumentPickerResponse | null>(null);
 	const [appointments, setAppointments] = useState<IListAppointment[]>([]);
-	const [appointmentID, setAppointmentID] = useState<ItemValue>("");
+	const [appointmentID, setAppointmentID] = useState<ItemValue>('');
 	const [appointmentData, setAppointmentData] = useState<IListAppointment>();
 	const [client, setClient] = useState<IClientData>();
 	// const [service, setService] = useState<ItemValue>("");
@@ -56,7 +55,7 @@ const UploadReport = () => {
 			).data;
 			setAppointments(appmts);
 		})();
-	}, []);
+	}, [provider_data.id]);
 
 	//get specifice appointment datum on user appointmentID select
 	useEffect(() => {
@@ -92,19 +91,19 @@ const UploadReport = () => {
 			// setUploadFile(singleFile?.assets[0]);
 			const singleFile = await pickSingle({
 				type: [types.doc, types.pdf, types.docx, types.images],
-				presentationStyle: "fullScreen",
+				presentationStyle: 'fullScreen',
 			});
 
 			setUploadFile(singleFile);
-			console.log("File selected Successfully!", singleFile.uri);
+			console.log('File selected Successfully!', singleFile.uri);
 		} catch (error) {
 			//handle errors
 			//if user cancels
 			setUploadFile(null);
 			if (isCancel(error)) {
-				Alert.alert("File selection canceled");
+				Alert.alert('File selection canceled');
 			} else {
-				Alert.alert("Something Happened!");
+				Alert.alert('Something Happened!');
 				throw error;
 			}
 		}
@@ -113,14 +112,14 @@ const UploadReport = () => {
 	const handleReportSubmit = useCallback(async () => {
 		if (!appointmentData) {
 			Toast.showToast({
-				message: "select beneficiary",
-				type: "warning",
+				message: 'select beneficiary',
+				type: 'warning',
 				duration: 2000,
 			});
 			return;
 		}
 		let remotefmcuser: any = await firebaseServices.getUserDoc(
-			`@${client?.last_name.split(" ").join("")}${client?.id}`,
+			`@${client?.last_name.split(' ').join('')}${client?.id}`,
 		);
 		// console.log("remote user fcm token: ", remotefmcuser.fcm_token);
 
@@ -132,20 +131,20 @@ const UploadReport = () => {
 		try {
 			const formdata = new FormData();
 
-			formdata.append("appointment_id", appointmentID);
-			formdata.append("beneficiary_id", client?.id);
-			formdata.append("provider_id", provider_data.id);
-			formdata.append("title", appointmentData.service_name);
-			formdata.append("file", {
+			formdata.append('appointment_id', appointmentID);
+			formdata.append('beneficiary_id', client?.id);
+			formdata.append('provider_id', provider_data.id);
+			formdata.append('title', appointmentData.service_name);
+			formdata.append('file', {
 				uri: uploadFile?.uri,
 				name: uploadFile?.name,
 				type: uploadFile?.type,
 			});
 
-			console.log("form data", formdata);
+			console.log('form data', formdata);
 
 			const res = await axios.post(
-				"https://ppfnhealthapp.com/api/report",
+				'https://ppfnhealthapp.com/api/report',
 				formdata,
 				// {
 
@@ -156,38 +155,50 @@ const UploadReport = () => {
 				// },
 				{
 					headers: {
-						"Content-Type": "multipart/form-data",
+						'Content-Type': 'multipart/form-data',
 					},
 				},
 			);
-			console.log("report upload message: ", res);
+			console.log('report upload message: ', res);
 
 			if (res.status) {
-				const fcm_res = await sendFcm(
+				await sendFcm(
 					remotefmcuser.fcm_token,
 					`${provider_data.first_name} ${provider_data.last_name} just sent a new report`,
-					"Report",
-					{type: "REPORT"},
+					'Report',
+					{type: 'REPORT'},
 				);
 
 				Toast.showToast({
-					message: "Report sent Successfully!",
-					type: "success",
+					message: 'Report sent Successfully!',
+					type: 'success',
 					duration: 2000,
 				});
 
-				navigate("reports");
+				navigate('reports');
 			}
 		} catch (error) {
 			Toast.showToast({
-				message: "Faild to upload report",
-				type: "warning",
+				message: 'Faild to upload report',
+				type: 'warning',
 				duration: 2000,
 			});
-			console.log("report upload error", error);
+			console.log('report upload error', error);
 			// console.log(JSON.stringify(error));
 		}
-	}, [provider_data.id, appointmentID, uploadFile]);
+	}, [
+		appointmentData,
+		client?.last_name,
+		client?.id,
+		appointmentID,
+		provider_data.id,
+		provider_data.first_name,
+		provider_data.last_name,
+		uploadFile?.uri,
+		uploadFile?.name,
+		uploadFile?.type,
+		navigate,
+	]);
 
 	const handleValue = useCallback((value: ItemValue) => {
 		setAppointmentID(value);
@@ -213,19 +224,19 @@ const UploadReport = () => {
 				onPress={handleOnSelectUpload}
 				style={styles.selectContainer}>
 				<Text style={styles.selectPlaceholder}>
-					Attach File:{" "}
+					Attach File:{' '}
 					<Text style={styles.selectPlaceholderText}>
 						{uploadFile?.name}
 					</Text>
 				</Text>
 			</TouchableWithoutFeedback>
-			<View style={{justifyContent: "center", alignItems: "center"}}>
+			<View style={{justifyContent: 'center', alignItems: 'center'}}>
 				<TouchableOpacity
 					onPress={handleReportSubmit}
 					style={{
 						backgroundColor: style.primaryColor,
-						justifyContent: "center",
-						alignItems: "center",
+						justifyContent: 'center',
+						alignItems: 'center',
 						padding: 10,
 						width: WIDTH / 1.5,
 						borderRadius: 10,
