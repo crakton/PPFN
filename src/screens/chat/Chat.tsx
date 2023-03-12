@@ -119,6 +119,10 @@ export default function Chat() {
 		setShowEmojis(prev => !prev);
 	}, []);
 
+	const handleClose = useCallback(() => {
+		() => setShowEmojis(false);
+	}, []);
+
 	if (typeof data === 'undefined') {
 		return <ActivityLoader />;
 	}
@@ -184,7 +188,7 @@ export default function Chat() {
 				<EmojiPicker
 					open={showEmojis}
 					onEmojiSelected={onEmojiSelected}
-					onClose={() => setShowEmojis(false)}
+					onClose={handleClose}
 				/>
 			</ImageBackground>
 		</SafeAreaView>
