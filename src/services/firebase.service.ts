@@ -121,6 +121,13 @@ export class FirebaseServices {
 						remoteMessage.data,
 					);
 				}
+				// if (remoteMessage.data?.type === 'CHAT') {
+				// 	await notifeeServices.displayMessagesNofication(
+				// 		remoteMessage.notification?.title,
+				// 		remoteMessage.notification?.body,
+				// 		remoteMessage.data,
+				// 	);
+				// }
 				if (remoteMessage.data?.type === 'APPOINTMENT') {
 					store.dispatch(
 						setAppointmentNotification({
@@ -173,6 +180,15 @@ export class FirebaseServices {
 					await notifeeServices.displayCallNofication(
 						`<p style="color: #39156a;">${remoteMessage.notification?.title}</p>`,
 						`<p style="color: #5E96CF;">${remoteMessage.notification?.body}</p>`,
+						remoteMessage.data,
+					);
+				}
+				if (remoteMessage.data?.type === 'CHAT') {
+					await notifee.incrementBadgeCount();
+
+					await notifeeServices.displayMessagesNofication(
+						`<p style="color: #39156a;">${remoteMessage.notification?.title}</p>`,
+						`${remoteMessage.notification?.body}`,
 						remoteMessage.data,
 					);
 				}
@@ -229,10 +245,15 @@ export class FirebaseServices {
 						remoteMessage.data,
 					);
 				}
-			} catch (error) {
-				console.log(error);
-			}
-			try {
+				if (remoteMessage.data?.type === 'CHAT') {
+					await notifee.incrementBadgeCount();
+					await notifeeServices.displayMessagesNofication(
+						remoteMessage.notification?.title,
+						remoteMessage.notification?.body,
+						remoteMessage.data,
+					);
+				}
+
 				if (remoteMessage.data?.type === 'APPOINTMENT') {
 					store.dispatch(
 						setAppointmentNotification({
@@ -247,10 +268,7 @@ export class FirebaseServices {
 						remoteMessage.data,
 					);
 				}
-			} catch (error) {
-				console.log(error);
-			}
-			try {
+
 				if (remoteMessage.data?.type === 'REPORT') {
 					store.dispatch(
 						setReportNotification({
@@ -292,10 +310,7 @@ export class FirebaseServices {
 							remoteMessage.data,
 						);
 					}
-				} catch (error) {
-					console.log(error);
-				}
-				try {
+
 					if (remoteMessage?.data?.type === 'APPOINTMENT') {
 						store.dispatch(
 							setAppointmentNotification({
@@ -310,10 +325,7 @@ export class FirebaseServices {
 							remoteMessage.data,
 						);
 					}
-				} catch (error) {
-					console.log(error);
-				}
-				try {
+
 					if (remoteMessage?.data?.type === 'REPORT') {
 						store.dispatch(
 							setReportNotification({
@@ -397,24 +409,6 @@ export class FirebaseServices {
 			console.log(error);
 		}
 	}
-	// getOnlineStatus(uid: string, cb: (arg1?: any) => void) {
-	// 	const ref = database().ref(`Users/${uid}`);
-	// 	const nullRef = ref.toString().split("/").slice(0, 1).join("");
-	// 	console.log(nullRef);
-
-	// 	if (nullRef === "null") {
-	// 		return false;
-	// 	} else {
-	// 		database()
-	// 			.ref(`Users/${uid}/online`)
-	// 			.on("value", snapshot => {
-	// 				cb(snapshot.val());
-	// 			});
-	// 	}
-	// 	// Display the online status of the user.
-
-	// 	cb();
-	// }
 
 	async createRealTimeUser(uid: string, payload: {}) {
 		try {

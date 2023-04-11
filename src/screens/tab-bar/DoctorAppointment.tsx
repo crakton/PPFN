@@ -10,8 +10,9 @@ import {
 	View,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import storage from '@react-native-firebase/storage';
 import FeIcon from 'react-native-vector-icons/Feather';
-import MIcon from 'react-native-vector-icons/MaterialIcons';
+// import MIcon from 'react-native-vector-icons/MaterialIcons';
 
 import {HeaderWithBackButton} from '../../components/HeaderWithBackButton';
 import {StarRating} from '../../components/widgets/StarRating';
@@ -20,6 +21,7 @@ import IListProvider from '../../interfaces/listProvider';
 import {HEIGHT} from '../../utils/dim';
 import convertToAge from '../../utils/convertToAge';
 import whichSignedUser from '../../utils/whichSignedUser';
+import {Image} from 'react-native';
 
 const DoctorAppointment = memo(() => {
 	const {params} = useRoute<RouteProp<{params: IListProvider}>>();
@@ -27,18 +29,35 @@ const DoctorAppointment = memo(() => {
 		navigate: (route: string, opt: object) => void;
 	}>();
 	const [whichUser, setWhichUser] = useState<string>();
+	const [image, setImage] = useState('');
 	useEffect(() => {
 		(async () => {
 			setWhichUser(await whichSignedUser());
 		})();
 	}, []);
+	useEffect(() => {
+		(async () => {
+			try {
+				const img = await storage()
+					.ref(`profile_images/@${params?.id}${params?.first_name}`)
+					.getDownloadURL();
+				setImage(img);
+			} catch (error) {
+				console.error(error);
+			}
+		})();
+	}, [params]);
 	return (
 		<SafeAreaView>
 			<ScrollView>
 				<ImageBackground
 					imageStyle={{resizeMode: 'cover'}}
 					style={{height: HEIGHT / 2}}
-					source={require('../../assets/images/fallback.png')}>
+					source={
+						image
+							? {uri: image}
+							: require('../../assets/images/fallback.png')
+					}>
 					<HeaderWithBackButton />
 				</ImageBackground>
 				<View style={styles.nameContainer}>
@@ -89,12 +108,11 @@ const DoctorAppointment = memo(() => {
 							right: 10,
 						}}
 						onPress={() => navigate('chat', {...params})}>
-						<MIcon
-							name="chat"
-							size={28}
-							color={style.secondaryColor}
+						<Image
+							resizeMode={'contain'}
+							style={{width: 100, height: 100}}
+							source={require('../../assets/images/chat.png')}
 						/>
-						<Text style={{color: style.secondaryColor}}>chat</Text>
 					</TouchableOpacity>
 				</View>
 				<View

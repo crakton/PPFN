@@ -68,6 +68,18 @@ const StackNav = memo(() => {
 			}
 			if (
 				type === EventType.ACTION_PRESS &&
+				detail.pressAction?.id === 'messages'
+			) {
+				navigate('chat', {
+					first_name: detail.notification?.data?.first_name,
+					last_name: detail.notification?.data?.last_name,
+					id: detail.notification?.data?.id,
+				});
+				await notifee.decrementBadgeCount();
+				await notifee.cancelNotification(detail.notification.id);
+			}
+			if (
+				type === EventType.ACTION_PRESS &&
 				detail.pressAction?.id === 'others'
 			) {
 				navigate('notifications');
@@ -95,6 +107,18 @@ const StackNav = memo(() => {
 					detail.pressAction?.id === 'others'
 				) {
 					navigate('notifications');
+					notifee.decrementBadgeCount();
+					await notifee.cancelNotification(detail.notification.id);
+				}
+				if (
+					type === EventType.ACTION_PRESS &&
+					detail.pressAction?.id === 'messages'
+				) {
+					navigate('chat', {
+						first_name: detail.notification?.data?.first_name,
+						last_name: detail.notification?.data?.last_name,
+						id: detail.notification?.data?.id,
+					});
 					notifee.decrementBadgeCount();
 					await notifee.cancelNotification(detail.notification.id);
 				}

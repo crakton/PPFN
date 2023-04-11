@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import {Picker} from '@react-native-community/picker';
 import {ItemValue} from '@react-native-community/picker/typings/Picker';
 import {useNavigation} from '@react-navigation/native';

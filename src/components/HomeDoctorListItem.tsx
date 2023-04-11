@@ -1,17 +1,20 @@
 /* eslint-disable react-native/no-inline-styles */
 import {View, Text, Image, TouchableOpacity, StyleSheet} from 'react-native';
-import React, {useLayoutEffect, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useState} from 'react';
+import {useNavigation} from '@react-navigation/native';
 import AntIcon from 'react-native-vector-icons/AntDesign';
+import storage from '@react-native-firebase/storage';
+
 import {INavigateProps} from '../interfaces';
 import {style} from '../constants/style';
 import {Rating} from './widgets/Rating';
-import {useNavigation} from '@react-navigation/native';
 import IListProvider from '../interfaces/listProvider';
 import firebaseServices from '../services/firebase.service';
 import {PresenceStatus} from './widgets/PresenceStatus';
 
 export default function HomeDoctorListItem({...data}: IListProvider) {
 	const {navigate}: {navigate: INavigateProps} = useNavigation();
+	const [image, setImage] = useState('');
 	const [status, setStatus] = useState<boolean | null>();
 	useLayoutEffect(() => {
 		firebaseServices.getOnlineStatus(
@@ -21,12 +24,28 @@ export default function HomeDoctorListItem({...data}: IListProvider) {
 			},
 		);
 	}, [data.id, data.last_name]);
+	useEffect(() => {
+		(async () => {
+			try {
+				const img = await storage()
+					.ref(`profile_images/@${data?.id}${data?.first_name}`)
+					.getDownloadURL();
+				setImage(img);
+			} catch (error) {
+				console.error(error);
+			}
+		})();
+	}, [data]);
 	return (
 		<View style={styles.container}>
 			<View style={styles.imgContainer}>
 				<Image
 					style={styles.img}
-					source={require('../assets/images/logo.png')}
+					source={
+						image
+							? {uri: image}
+							: require('../assets/images/logo.png')
+					}
 				/>
 			</View>
 			<View

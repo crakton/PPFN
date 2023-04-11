@@ -5,6 +5,7 @@ import MIcon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
 import React, {memo, useCallback, useEffect, useMemo, useState} from 'react';
 import {
+	Image,
 	KeyboardAvoidingView,
 	SafeAreaView,
 	Text,
@@ -350,8 +351,12 @@ function ViewAppointment() {
 					// backgroundColor: 'coral',
 				}}
 				onPress={() => navigate('chat', data)}>
-				<MIcon name="chat" size={28} color={style.tertiaryColor} />
-				<Text style={{color: style.secondaryColor}}>chat</Text>
+				{/* <MIcon name="chat" size={28} color={style.tertiaryColor} /> */}
+				<Image
+					resizeMode={'contain'}
+					style={{width: 100, height: 100}}
+					source={require('../assets/images/chat.png')}
+				/>
 			</TouchableOpacity>
 		</SafeAreaView>
 	);

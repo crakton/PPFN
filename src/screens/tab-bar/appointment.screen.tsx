@@ -1,4 +1,6 @@
-import React, {memo, useEffect, useState} from "react";
+/* eslint-disable react-native/no-inline-styles */
+import React, {memo, useEffect, useState} from 'react';
+import axios from 'axios';
 import {
 	FlatList,
 	Image,
@@ -6,74 +8,71 @@ import {
 	Text,
 	TouchableOpacity,
 	View,
-} from "react-native";
-import {useDispatch, useSelector} from "react-redux";
-import AntIcon from "react-native-vector-icons/AntDesign";
+} from 'react-native';
+import storage from '@react-native-firebase/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useDispatch, useSelector} from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
+import AntIcon from 'react-native-vector-icons/AntDesign';
 
 //components
-import SetFetchType from "../../components/SetFetchType";
-import Layout from "../../layouts/DrawerScreenLayout";
+import SetFetchType from '../../components/SetFetchType';
+import Layout from '../../layouts/DrawerScreenLayout';
 
 //constants, interfaces and utils
-import {appointmentsFetchTypes} from "../../constants/staticMenus";
-import whichSignedUser from "../../utils/whichSignedUser";
-import IClientData from "../../interfaces/clientData";
-import IProviderData from "../../interfaces/providerData";
-import {style} from "../../constants/style";
-import {RootState} from "../../types/redux.type";
-import IListAppointment from "../../interfaces/listAppointment";
-import formatDate from "../auth/formatDate";
-import DefaultText from "../../components/widgets/DefaultText";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {appointmentsFetchTypes} from '../../constants/staticMenus';
+import whichSignedUser from '../../utils/whichSignedUser';
+import IClientData from '../../interfaces/clientData';
+import IProviderData from '../../interfaces/providerData';
+import {style} from '../../constants/style';
+import {RootState} from '../../types/redux.type';
+import IListAppointment from '../../interfaces/listAppointment';
+import formatDate from '../auth/formatDate';
+import DefaultText from '../../components/widgets/DefaultText';
 
-import ActivityLoader from "../../components/widgets/ActivityLoader";
-import axios from "axios";
+import ActivityLoader from '../../components/widgets/ActivityLoader';
 import {
 	getPreviousClientAppointment,
 	getPreviousProviderAppointment,
 	getUpcomingClientAppointment,
 	getUpcomingProviderAppointment,
-} from "../../redux/appointments";
-import {useNavigation} from "@react-navigation/native";
-import {INavigateProps} from "../../interfaces";
-import Home from "./home.screen";
-import generateToken from "../../apis/generate-token";
-import callService from "../../services/call.service";
-import sendFcm from "../../apis/send-fcm";
-import firebaseServices from "../../services/firebase.service";
-import {fetchText} from "react-native-svg/lib/typescript/xml";
+} from '../../redux/appointments';
+import {INavigateProps} from '../../interfaces';
+import Home from './home.screen';
+import sendFcm from '../../apis/send-fcm';
+import firebaseServices from '../../services/firebase.service';
+import {Toast} from 'react-native-awesome';
 
 export function RenderAppointments(props: {
 	fetchType: string;
 	item: IListAppointment;
+	image: string;
 	navigate: INavigateProps;
 	providerphone?: string;
 }) {
-	const {item, navigate} = props;
+	const {image, item, navigate} = props;
 	const channel = item.provider_name
-		.split(" ")
+		.split(' ')
 		.splice(0, 1)
-		.concat(item.client_name.split(" ").slice(1))
-		.join("_")
+		.concat(item.client_name.split(' ').slice(1))
+		.join('_')
 		.toString();
 
 	async function handleCall() {
 		const user = await whichSignedUser();
 
-		console.log(channel);
-
-		if (user === "client") {
+		if (user === 'client') {
 			// const token = await generateToken(channel, item.client_id);
-			const lastname = item.provider_name.split(" ").slice(1).join("");
+			const lastname = item.provider_name.split(' ').slice(1).join('');
 			let remotefmcuser: any = await firebaseServices.getUserDoc(
 				`@${lastname}${item.prov_id}`,
 			);
 			await sendFcm(
 				remotefmcuser.fcm_token,
 				`${item.client_name} starting a call`,
-				"Calling",
+				'Calling',
 				{
-					type: "CALL",
+					type: 'CALL',
 					channel,
 					caller: item.client_name,
 					username: item.provider_name,
@@ -81,7 +80,7 @@ export function RenderAppointments(props: {
 				},
 			);
 
-			navigate("call", {
+			navigate('call', {
 				channel,
 				uid: item.client_id,
 				username: item.client_name,
@@ -90,20 +89,18 @@ export function RenderAppointments(props: {
 			// const token = await generateToken(channel, item.prov_id);
 			// console.log(token);
 
-			const lastname = item.client_name.split(" ").slice(1).join("");
-			console.log(lastname, "user");
+			const lastname = item.client_name.split(' ').slice(1).join('');
 
 			let remotefmcuser: any = await firebaseServices.getUserDoc(
 				`@${lastname}${item.client_id}`,
 			);
-			console.log("fcm token", remotefmcuser);
 
 			await sendFcm(
 				remotefmcuser.fcm_token,
 				`${item.provider_name} starting a call`,
-				"Calling",
+				'Calling',
 				{
-					type: "CALL",
+					type: 'CALL',
 					channel,
 					caller: item.provider_name,
 					username: item.client_name,
@@ -111,7 +108,7 @@ export function RenderAppointments(props: {
 				},
 			);
 
-			navigate("call", {
+			navigate('call', {
 				channel,
 				uid: item.prov_id,
 				username: item.provider_name,
@@ -126,16 +123,20 @@ export function RenderAppointments(props: {
 			<View style={styles.imgContainer}>
 				<Image
 					style={styles.img}
-					source={require("../../assets/images/logo.png")}
+					source={
+						image
+							? {uri: image}
+							: require('../../assets/images/logo.png')
+					}
 				/>
 			</View>
-			<View style={{flex: 1, flexDirection: "column"}}>
+			<View style={{flex: 1, flexDirection: 'column'}}>
 				<Text
 					style={{
-						fontFamily: "AltonaSans-Regular",
+						fontFamily: 'AltonaSans-Regular',
 						fontSize: 18,
-						fontWeight: "500",
-						textTransform: "capitalize",
+						fontWeight: '500',
+						textTransform: 'capitalize',
 						color: style.primaryColor,
 					}}>
 					{item.provider_name} | {item.client_name}
@@ -144,13 +145,13 @@ export function RenderAppointments(props: {
 				<Text
 					style={{
 						fontSize: 12,
-						fontWeight: "500",
+						fontWeight: '500',
 						color: style.titleColor,
 					}}>
 					{formatDate(item.date_created)}
 				</Text>
 				{item.facility && (
-					<View style={{flexDirection: "row", marginVertical: 5}}>
+					<View style={{flexDirection: 'row', marginVertical: 5}}>
 						<Text style={styles.clinic}>{item.facility}</Text>
 					</View>
 				)}
@@ -162,9 +163,9 @@ export function RenderAppointments(props: {
 					<View style={[styles.status, styles.inactive]} />
 				)}
 			</View> */}
-			<View style={{flexDirection: "column"}}>
+			<View style={{flexDirection: 'column'}}>
 				<TouchableOpacity
-					onPress={() => navigate("view_appointment", item)}
+					onPress={() => navigate('view_appointment', item)}
 					style={styles.secondaryBtn}>
 					<AntIcon
 						color={style.highlight}
@@ -172,7 +173,7 @@ export function RenderAppointments(props: {
 						name="calendar"
 					/>
 				</TouchableOpacity>
-				{props.fetchType === "Previous" ? null : (
+				{props.fetchType === 'Previous' ? null : (
 					<TouchableOpacity
 						onPress={handleCall}
 						style={styles.primaryBtn}>
@@ -205,9 +206,9 @@ const Appointment = memo(() => {
 			const user = await whichSignedUser();
 			setWhichUser({
 				user,
-				data: user === "client" ? client_data : provider_data,
+				data: user === 'client' ? client_data : provider_data,
 			});
-			if (whichUser?.user === "client") {
+			if (whichUser?.user === 'client') {
 				await getClientAppointments();
 			} else {
 				await getProviderAppointments();
@@ -218,31 +219,31 @@ const Appointment = memo(() => {
 						`https://ppfnhealthapp.com/api/appointment/beneficiary_upcoming?beneficiary_id=${client_data.id}`,
 					);
 					await AsyncStorage.setItem(
-						"upcoming_client_appointment",
+						'upcoming_client_appointment',
 						JSON.stringify(resUp.data),
 					);
 					const resPre = await axios(
 						`https://ppfnhealthapp.com/api/appointment/beneficiary_previous?beneficiary_id=${client_data.id}`,
 					);
 					await AsyncStorage.setItem(
-						"previous_client_appointment",
+						'previous_client_appointment',
 						JSON.stringify(resPre.data),
 					);
 					const upcoming = JSON.parse(
 						await AsyncStorage.getItem(
-							"upcoming_client_appointment",
+							'upcoming_client_appointment',
 						),
 					);
 					const previous = JSON.parse(
 						await AsyncStorage.getItem(
-							"previous_client_appointment",
+							'previous_client_appointment',
 						),
 					);
 					dispatch(getUpcomingClientAppointment(upcoming));
 					dispatch(getPreviousClientAppointment(previous));
 				} catch (error) {
-					if (error.message === "Network Error") {
-						Toast("Network Error");
+					if (error.message === 'Network Error') {
+						Toast('Network Error');
 					}
 					throw new Error(JSON.stringify(error));
 				}
@@ -250,33 +251,36 @@ const Appointment = memo(() => {
 			async function getProviderAppointments() {
 				try {
 					await AsyncStorage.setItem(
-						"upcoming_provider_appointment",
+						'upcoming_provider_appointment',
 						await axios(
 							`https://ppfnhealthapp.com/api/appointment/provider_upcoming?prov_id=${provider_data.id}`,
 						).then(res => JSON.stringify(res.data)),
 					);
 					await AsyncStorage.setItem(
-						"previous_provider_appointment",
+						'previous_provider_appointment',
 						await axios(
 							`https://ppfnhealthapp.com/api/appointment/provider_previous?prov_id=${provider_data.id}`,
 						).then(res => JSON.stringify(res.data)),
 					);
 					const upcoming = JSON.parse(
 						await AsyncStorage.getItem(
-							"upcoming_provider_appointment",
+							'upcoming_provider_appointment',
 						),
 					);
 					const previous = JSON.parse(
 						await AsyncStorage.getItem(
-							"previous_provider_appointment",
+							'previous_provider_appointment',
 						),
 					);
 
 					dispatch(getUpcomingProviderAppointment(upcoming));
 					dispatch(getPreviousProviderAppointment(previous));
 				} catch (error) {
-					if (error.message === "Network Error") {
-						Toast("Network Error");
+					if (error.message === 'Network Error') {
+						Toast.showToast({
+							message: 'Network Error',
+							position: 'bottom',
+						});
 					}
 					throw new Error(JSON.stringify(error));
 				}
@@ -285,10 +289,27 @@ const Appointment = memo(() => {
 	}, [whichUser?.user, client_data, dispatch, provider_data]);
 	const [fetchType, setFetchType] = useState(appointmentsFetchTypes[0]);
 
+	const [image, setImage] = useState('');
+
+	useEffect(() => {
+		(async () => {
+			try {
+				const data =
+					whichUser?.user === 'client' ? provider_data : client_data;
+				const img = await storage()
+					.ref(`profile_images/@${data.id}${data.first_name}`)
+					.getDownloadURL();
+				setImage(img);
+			} catch (error) {
+				console.error(error);
+			}
+		})();
+	}, [client_data, provider_data, whichUser?.user]);
+
 	if (!whichUser) {
 		return <ActivityLoader />;
 	}
-	return whichUser.user === "provider" ? (
+	return whichUser.user === 'provider' ? (
 		<Home />
 	) : (
 		<Layout
@@ -301,28 +322,38 @@ const Appointment = memo(() => {
 					setFetchType={setFetchType}
 				/>
 			</View>
-			{fetchType === "Upcoming" ? (
+			{fetchType === 'Upcoming' ? (
 				upcoming_client_appointment.length ? (
 					<FlatList
 						data={upcoming_client_appointment}
 						keyExtractor={(_, id) => id.toString()}
 						renderItem={({item}) =>
-							RenderAppointments({item, navigate, fetchType})
+							RenderAppointments({
+								item,
+								navigate,
+								fetchType,
+								image,
+							})
 						}
 					/>
 				) : (
 					<DefaultText
-						text={"You do not have any upcoming appointment yet!"}
+						text={'You do not have any upcoming appointment yet!'}
 					/>
 				)
 			) : null}
-			{fetchType === "Previous" ? (
+			{fetchType === 'Previous' ? (
 				previous_client_appointment.length ? (
 					<FlatList
 						data={previous_client_appointment}
 						keyExtractor={(_, id) => id.toString()}
 						renderItem={({item}) =>
-							RenderAppointments({item, navigate, fetchType})
+							RenderAppointments({
+								item,
+								navigate,
+								fetchType,
+								image,
+							})
 						}
 					/>
 				) : (
@@ -341,17 +372,17 @@ const styles = StyleSheet.create({
 		borderRadius: 99,
 	},
 	active: {
-		backgroundColor: "limegreen",
+		backgroundColor: 'limegreen',
 	},
 	inactive: {
 		backgroundColor: style.titleColor,
 	},
 	container: {
-		flexDirection: "row",
-		alignItems: "center",
+		flexDirection: 'row',
+		alignItems: 'center',
 		backgroundColor: style.cardColor,
 		borderRadius: 15,
-		overflow: "hidden",
+		overflow: 'hidden',
 		elevation: 3,
 		marginVertical: 5,
 		marginHorizontal: 15,
@@ -359,7 +390,7 @@ const styles = StyleSheet.create({
 	imgContainer: {
 		height: 55,
 		width: 55,
-		overflow: "hidden",
+		overflow: 'hidden',
 		borderRadius: 100,
 		marginVertical: 15,
 		marginHorizontal: 10,
@@ -370,24 +401,24 @@ const styles = StyleSheet.create({
 	},
 	secondaryBtn: {
 		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: 'center',
+		alignItems: 'center',
 		backgroundColor: style.secondaryColor,
 		paddingHorizontal: 15,
 	},
 	primaryBtn: {
 		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
+		justifyContent: 'center',
+		alignItems: 'center',
 		backgroundColor: style.tertiaryColor,
 		paddingHorizontal: 15,
 	},
 	clinic: {
 		fontSize: 12,
-		fontWeight: "bold",
+		fontWeight: 'bold',
 		color: style.secondaryColor,
 		backgroundColor: style.highlight,
-		flexDirection: "row",
+		flexDirection: 'row',
 		padding: 7,
 		borderRadius: 5,
 	},

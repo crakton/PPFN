@@ -2,7 +2,7 @@
 import {SafeAreaView, Text, TouchableOpacity} from 'react-native';
 import React, {useCallback, useEffect, useLayoutEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import {GiftedChat, Send} from 'react-native-gifted-chat';
+import {GiftedChat, IMessage, Send, SendProps} from 'react-native-gifted-chat';
 import EmojiPicker from 'rn-emoji-keyboard';
 
 import {RouteProp, useRoute} from '@react-navigation/native';
@@ -27,6 +27,8 @@ import renderBubble from '../../components/widgets/renderBubble';
 import {style} from '../../constants/style';
 import {ImageBackground} from 'react-native';
 import {EmojiType} from 'rn-emoji-keyboard/lib/typescript/src/types';
+import firebaseServices from '../../services/firebase.service';
+import sendFcm from '../../apis/send-fcm';
 
 export default function Chat() {
 	const {params} =
@@ -55,28 +57,7 @@ export default function Chat() {
 			});
 		return unsubcribe;
 	}, [uidRef]);
-	const handleSend = useCallback(() => {
-		if (message && uidRef) {
-			firestore()
-				.collection('Chats')
-				.doc(uidRef)
-				.collection('messages')
-				.add({
-					_id: generateUUID(),
-					text: message.trim(),
-					createdAt: Date.now(),
-					user: {
-						_id: data?.id,
-						name: `${data?.first_name} ${data?.last_name}`,
-						avatar: image
-							? image
-							: 'https://placeimg.com/140/140/people',
-					},
-				});
-			setMessage('');
-		}
-		return;
-	}, [data?.first_name, data?.id, data?.last_name, image, message, uidRef]);
+
 	const getWhichUser = useCallback(async () => {
 		try {
 			const user = await whichSignedUser();
@@ -88,7 +69,7 @@ export default function Chat() {
 				setUidRef(`@${provider_data.last_name}${params.last_name}`);
 			}
 		} catch (error) {
-			console.log(error);
+			// console.log(error);
 		}
 	}, [client_data, provider_data, params]);
 
@@ -109,9 +90,56 @@ export default function Chat() {
 		})();
 	}, [data]);
 
-	const onEmojiSelected = useCallback((emoji: EmojiType) => {
-		console.log(emoji.emoji);
+	const handleSend = useCallback(async () => {
+		if (message && uidRef) {
+			firestore()
+				.collection('Chats')
+				.doc(uidRef)
+				.collection('messages')
+				.add({
+					_id: generateUUID(),
+					text: message.trim(),
+					createdAt: Date.now(),
+					user: {
+						_id: data?.id,
+						name: `${data?.first_name} ${data?.last_name}`,
+						avatar: image
+							? image
+							: 'https://placeimg.com/140/140/people',
+					},
+				});
 
+			setMessage('');
+			let remotefmcuser: any = await firebaseServices.getUserDoc(
+				`@${params.last_name.split(' ').join('')}${params?.id}`,
+			);
+			await sendFcm(
+				remotefmcuser.fcm_token,
+				message.length > 90
+					? message.slice(0, 90).concat(' ...')
+					: message,
+				`${data?.first_name} ${data?.last_name} just sent a message`,
+				{
+					type: 'CHAT',
+					first_name: data?.first_name,
+					last_name: data?.last_name,
+					id: data?.id,
+				},
+			);
+		}
+		return;
+	}, [
+		data?.first_name,
+		data?.id,
+		data?.last_name,
+		image,
+		message,
+		params?.id,
+		params.last_name,
+		uidRef,
+	]);
+
+	const onEmojiSelected = useCallback((emoji: EmojiType) => {
 		setMessage(prevMessage => prevMessage.concat(` ${emoji.emoji} `));
 	}, []);
 
@@ -120,9 +148,46 @@ export default function Chat() {
 	}, []);
 
 	const handleClose = useCallback(() => {
-		() => setShowEmojis(false);
+		setShowEmojis(false);
 	}, []);
 
+	const onTextChange = useCallback(
+		(val: string): void => setMessage(val),
+		[],
+	);
+
+	const renderAccessory = useCallback(() => {
+		return (
+			<TouchableOpacity
+				style={{marginLeft: 15}}
+				onPress={handleEmojiPicking}>
+				<MIcon
+					name="emoji-emotions"
+					color={style.primaryColor}
+					size={22}
+				/>
+			</TouchableOpacity>
+		);
+	}, [handleEmojiPicking]);
+
+	const renderSend = useCallback((props: SendProps<IMessage>) => {
+		return (
+			<Send
+				{...props}
+				containerStyle={{
+					justifyContent: 'center',
+					marginRight: 5,
+				}}
+				children={
+					<FaIcon
+						color={style.primaryColor}
+						size={24}
+						name={'send'}
+					/>
+				}
+			/>
+		);
+	}, []);
 	if (typeof data === 'undefined') {
 		return <ActivityLoader />;
 	}
@@ -145,39 +210,10 @@ export default function Chat() {
 					infiniteScroll
 					renderUsernameOnMessage
 					renderBubble={renderBubble}
-					renderAccessory={() => {
-						return (
-							<TouchableOpacity
-								style={{marginLeft: 15}}
-								onPress={handleEmojiPicking}>
-								<MIcon
-									name="emoji-emotions"
-									color={style.primaryColor}
-									size={22}
-								/>
-							</TouchableOpacity>
-						);
-					}}
-					renderSend={props => {
-						return (
-							<Send
-								{...props}
-								containerStyle={{
-									justifyContent: 'center',
-									marginRight: 5,
-								}}
-								children={
-									<FaIcon
-										color={style.primaryColor}
-										size={24}
-										name={'send'}
-									/>
-								}
-							/>
-						);
-					}}
+					renderAccessory={renderAccessory}
+					renderSend={renderSend}
 					text={message}
-					onInputTextChanged={val => setMessage(val)}
+					onInputTextChanged={onTextChange}
 					onSend={handleSend}
 					user={{
 						_id: data?.id,
@@ -186,6 +222,7 @@ export default function Chat() {
 					messages={messages}
 				/>
 				<EmojiPicker
+					allowMultipleSelections
 					open={showEmojis}
 					onEmojiSelected={onEmojiSelected}
 					onClose={handleClose}
